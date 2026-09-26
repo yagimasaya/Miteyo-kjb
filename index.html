@@ -37,20 +37,31 @@
     </div>
 
     <script>
-        // ★ここに後ほど、GASのウェブアプリURLを貼り付けます
-        const GAS_API_URL = "https://script.google.com/macros/s/AKfycbxQqyTJoDJB4stO6NF3uq0EKv0YrwGbwNwDHeyyUnsc6V4WM0AK3oO-oB23QmFILBjcAg/exec";
+        // ★末尾に ?type=html を付けない、正しいGASのURLを設定してください
+        const GAS_API_URL = "https://script.google.com/macros/s/AKfycbxQqyTJvDJB4st06NF3ug0EKv0YrwGbwNvDHeyyUnsc6V4WM0AK3o0-o823qMFILbjcAg/exec";
+        
+        let lastMessage = ""; // 直近のメッセージを保持する変数
 
         async function fetchMessage() {
             try {
                 const response = await fetch(GAS_API_URL);
                 const text = await response.text();
-                document.getElementById('msg').innerText = text;
+                
+                // 何かしらの文字が取得できた場合のみ更新する
+                if (text && text.trim() !== "") {
+                    lastMessage = text;
+                    document.getElementById('msg').innerText = lastMessage;
+                }
             } catch (error) {
                 console.error("取得エラー:", error);
+                // 通信エラーが起きても、直前のメッセージを画面に残し続ける
+                if (lastMessage) {
+                    document.getElementById('msg').innerText = lastMessage;
+                }
             }
         }
 
-        // 初回取得 ＆ 10秒ごとに自動更新
+        // 初回取得 ＆ 10秒ごとに自動でバックグラウンド取得・更新
         fetchMessage();
         setInterval(fetchMessage, 10000);
     </script>
