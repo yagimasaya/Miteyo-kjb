@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>父への掲示板</title>
+    <style>
+        body {
+            background-color: #f0f4f8;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+        }
+        .card {
+            background: white;
+            padding: 60px 80px;
+            border-radius: 24px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+            text-align: center;
+            max-width: 85%;
+        }
+        h1 {
+            font-size: 3.5rem;
+            color: #333;
+            word-break: break-all;
+            line-height: 1.4;
+            margin: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1 id="msg">読み込み中...</h1>
+    </div>
+
+    <script>
+        // ★ここに後ほど、GASのウェブアプリURLを貼り付けます
+        const GAS_API_URL = "YOUR_GAS_WEB_APP_URL_HERE";
+
+        async function fetchMessage() {
+            try {
+                const response = await fetch(GAS_API_URL);
+                const text = await response.text();
+                document.getElementById('msg').innerText = text;
+            } catch (error) {
+                console.error("取得エラー:", error);
+            }
+        }
+
+        // 初回取得 ＆ 10秒ごとに自動更新
+        fetchMessage();
+        setInterval(fetchMessage, 10000);
+    </script>
+</body>
+</html>
