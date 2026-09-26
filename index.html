@@ -33,7 +33,6 @@
             border-bottom: 2px solid #f0f4f8;
             padding-bottom: 15px;
         }
-        /* メッセージが溜まっていくスクロールエリア */
         #message-container {
             flex-grow: 1;
             overflow-y: auto;
@@ -42,17 +41,34 @@
             gap: 15px;
             padding-right: 10px;
         }
-        /* 個別のメッセージカード */
         .message-item {
             background: #f7f9fc;
             padding: 20px 25px;
             border-radius: 16px;
+            border-left: 6px solid #06c755;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.03);
+        }
+        .message-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        .sender-name {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #06c755;
+        }
+        .message-time {
+            font-size: 1.0rem;
+            color: #666;
+        }
+        .message-text {
             font-size: 2.2rem;
             color: #333;
             word-break: break-all;
             line-height: 1.4;
-            border-left: 6px solid #06c755; /* LINEカラーのアクセント */
-            box-shadow: 0 2px 5px rgba(0,0,0,0.03);
+            margin: 0;
         }
     </style>
 </head>
@@ -60,37 +76,43 @@
     <div class="card">
         <h2>伝言板</h2>
         <div id="message-container">
-            <div class="message-item">読み込み中...</div>
+            <div class="message-item">
+                <p class="message-text">読み込み中...</p>
+            </div>
         </div>
     </div>
 
     <script>
         const GAS_API_URL = "https://script.google.com/macros/s/AKfycbxQqyTJoDJB4stO6NF3uq0EKv0YrwGbwNwDHeyyUnsc6V4WM0AK3oO-oB23QmFILBjcAg/exec";
         
-        let lastDisplayedMessage = ""; // 直近に表示したメッセージを記憶
+        let lastDataString = "";
 
-        async function fetchMessage() {
+        async function fetchMessages() {
             try {
                 const response = await fetch(GAS_API_URL);
-                const text = await response.text();
+                const data = await response.json();
                 
-                if (text && text.trim() !== "" && text !== lastDisplayedMessage) {
-                    lastDisplayedMessage = text;
+                const dataString = JSON.stringify(data);
+                if (dataString !== lastDataString) {
+                    lastDataString = dataString;
                     
                     const container = document.getElementById('message-container');
+                    container.innerHTML = "";
                     
-                    // 初回の「読み込み中...」があれば消す
-                    if (container.innerHTML.includes("読み込み中...")) {
-                        container.innerHTML = "";
-                    }
+                    data.forEach(msg => {
+                        const div = document.createElement('div');
+                        div.className = 'message-item';
+                        
+                        div.innerHTML = `
+                            <div class="message-header">
+                                <span class="sender-name">${msg.name} さん</span>
+                                <span class="message-time">${msg.time || ''}</span>
+                            </div>
+                            <p class="message-text">${msg.text}</p>
+                        `;
+                        container.appendChild(div);
+                    });
                     
-                    // 新しいメッセージの要素を作成して追加
-                    const div = document.createElement('div');
-                    div.className = 'message-item';
-                    div.innerText = text;
-                    container.appendChild(div);
-                    
-                    // 一番下（最新）に自動スクロール
                     container.scrollTop = container.scrollHeight;
                 }
             } catch (error) {
@@ -98,9 +120,8 @@
             }
         }
 
-        // 初回取得 ＆ 10秒ごとに自動チェック
-        fetchMessage();
-        setInterval(fetchMessage, 10000);
+        fetchMessages();
+        setInterval(fetchMessages, 10000);
     </script>
 </body>
 </html>
