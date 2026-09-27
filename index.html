@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>父への掲示板</title>
-    <style>
+<style>
         body {
             background-color: #f0f4f8;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -16,14 +16,15 @@
         }
         .card {
             background: white;
-            padding: 40px;
-            border-radius: 24px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
-            width: 80%;
-            max-width: 800px;
-            height: 80vh;
+            padding: 20px; /* 必要に応じて調整 */
+            border-radius: 0; /* 画面いっぱいに広げるため角丸をなくす場合 */
+            box-shadow: none; /* 影をなくす場合 */
+            width: 100vw;   /* 画面の幅いっぱい */
+            max-width: 100%;
+            height: 100vh;  /* 画面の高さいっぱい */
             display: flex;
             flex-direction: column;
+            box-sizing: border-box; /* パディングを含めて100%にする */
         }
         h2 {
             margin-top: 0;
