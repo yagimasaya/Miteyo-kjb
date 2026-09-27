@@ -16,15 +16,15 @@
         }
         .card {
             background: white;
-            padding: 20px; /* 必要に応じて調整 */
-            border-radius: 0; /* 画面いっぱいに広げるため角丸をなくす場合 */
-            box-shadow: none; /* 影をなくす場合 */
-            width: 100vw;   /* 画面の幅いっぱい */
+            padding: 20px;
+            border-radius: 0;
+            box-shadow: none;
+            width: 100vw;
             max-width: 100%;
-            height: 100vh;  /* 画面の高さいっぱい */
+            height: 100vh;
             display: flex;
             flex-direction: column;
-            box-sizing: border-box; /* パディングを含めて100%にする */
+            box-sizing: border-box; /* パディングを含めて100vhに収める */
         }
         h2 {
             margin-top: 0;
@@ -41,6 +41,8 @@
             flex-direction: column;
             gap: 15px;
             padding-right: 10px;
+            padding-bottom: 40px; /* ★ここを追加：一番下のメッセージが隠れないように余白を作る */
+            box-sizing: border-box;
         }
         .message-item {
             background: #f7f9fc;
