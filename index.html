@@ -3,16 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <title>父への掲示板</title>
-<style>
-        body {
+<<style>
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
             background-color: #f0f4f8;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-            overflow: hidden;
         }
         .card {
             background: white;
@@ -21,10 +19,10 @@
             box-shadow: none;
             width: 100vw;
             max-width: 100%;
-            height: 100vh;
+            height: 100dvh; /* ★ブラウザのバーを考慮した高さに変更 */
             display: flex;
             flex-direction: column;
-            box-sizing: border-box; /* パディングを含めて100vhに収める */
+            box-sizing: border-box;
         }
         h2 {
             margin-top: 0;
@@ -33,6 +31,7 @@
             text-align: center;
             border-bottom: 2px solid #f0f4f8;
             padding-bottom: 15px;
+            flex-shrink: 0; /* タイトルが潰れないようにする */
         }
         #message-container {
             flex-grow: 1;
@@ -41,7 +40,7 @@
             flex-direction: column;
             gap: 15px;
             padding-right: 10px;
-            padding-bottom: 40px; /* ★ここを追加：一番下のメッセージが隠れないように余白を作る */
+            padding-bottom: 80px; /* ★下部の余白を多めに取って確実にスクロールで見えるようにする */
             box-sizing: border-box;
         }
         .message-item {
@@ -50,6 +49,7 @@
             border-radius: 16px;
             border-left: 6px solid #06c755;
             box-shadow: 0 2px 5px rgba(0,0,0,0.03);
+            flex-shrink: 0;
         }
         .message-header {
             display: flex;
@@ -71,7 +71,7 @@
             color: #333;
             word-break: break-all;
             line-height: 1.4;
-            margin: 0;
+5            margin: 0;
         }
     </style>
 </head>
