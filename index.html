@@ -13,7 +13,7 @@
             background-color: #f0f4f8;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
         }
-        /* ★暗転用オーバーレイのスタイル */
+        /* 暗転用オーバーレイ */
         #blackout-screen {
             position: fixed;
             top: 0;
@@ -22,7 +22,7 @@
             height: 100dvh;
             background-color: black;
             z-index: 9999;
-            display: none; /* 初期状態は非表示 */
+            display: none;
         }
         .card {
             background: white;
@@ -62,6 +62,15 @@
             border-left: 6px solid #06c755;
             box-shadow: 0 2px 5px rgba(0,0,0,0.03);
             flex-shrink: 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s ease;
+        }
+        /* メッセージ本文部分のラッパー */
+        .message-content {
+            flex-grow: 1;
+            margin-right: 15px;
         }
         .message-header {
             display: flex;
@@ -85,17 +94,56 @@
             line-height: 1.4;
             margin: 0;
         }
+        /* ★「了解」丸ボタンのスタイル */
+        .ack-btn {
+            background-color: #06c755;
+            color: white;
+            border: none;
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            font-size: 1.2rem;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background-color 0.2s;
+        }
+        .ack-btn:active {
+            transform: scale(0.95);
+        }
+
+        /* ★既読（済み）になったときのスタイル（グレーアウト） */
+        .message-item.acknowledged {
+            background: #e2e8f0 !important;
+            border-left-color: #cbd5e1 !important;
+            opacity: 0.7;
+        }
+        .message-item.acknowledged .sender-name,
+        .message-item.acknowledged .message-text,
+        .message-item.acknowledged .message-time {
+            color: #64748b !important;
+        }
+        .ack-btn.acknowledged {
+            background-color: #94a3b8 !important;
+            cursor: default;
+            box-shadow: none;
+        }
     </style>
 </head>
 <body>
-    <!-- ★暗転用スクリーン -->
     <div id="blackout-screen"></div>
 
     <div class="card">
         <h2>伝言板</h2>
         <div id="message-container">
             <div class="message-item">
-                <p class="message-text">読み込み中...</p>
+                <div class="message-content">
+                    <p class="message-text">読み込み中...</p>
+                </div>
             </div>
         </div>
     </div>
@@ -105,18 +153,36 @@
         
         let lastDataString = "";
 
+        // 保存された既読状態（IDのリスト）を取得する
+        function getAcknowledgedIds() {
+            try {
+                const saved = localStorage.getItem('acknowledged_msgs');
+                return saved ? JSON.parse(saved) : [];
+            } catch (e) {
+                return [];
+            }
+        }
+
+        // 既読状態を保存する
+        function saveAcknowledgedId(msgId) {
+            const ids = getAcknowledgedIds();
+            if (!ids.includes(msgId)) {
+                ids.push(msgId);
+                localStorage.setItem('acknowledged_msgs', JSON.stringify(ids));
+            }
+        }
+
         async function fetchMessages() {
             try {
                 const response = await fetch(GAS_API_URL);
                 const data = await response.json();
                 
-                // 消灯状態のチェック
                 const blackoutDiv = document.getElementById('blackout-screen');
                 if (data.isBlackout) {
-                    blackoutDiv.style.display = "block"; // 暗転
-                    return; // 消灯中の場合はメッセージ描画をスキップ
+                    blackoutDiv.style.display = "block";
+                    return;
                 } else {
-                    blackoutDiv.style.display = "none";  // 通常表示
+                    blackoutDiv.style.display = "none";
                 }
                 
                 const dataString = JSON.stringify(data.messages);
@@ -126,16 +192,27 @@
                     const container = document.getElementById('message-container');
                     container.innerHTML = "";
                     
-                    data.messages.forEach(msg => {
+                    const ackIds = getAcknowledgedIds();
+
+                    data.messages.forEach((msg, index) => {
+                        // メッセージを一意に特定するための簡易ID（名前+時間+テキストの組み合わせ）
+                        const msgId = `${msg.name}_${msg.time}_${msg.text}`;
+                        const isAck = ackIds.includes(msgId);
+
                         const div = document.createElement('div');
-                        div.className = 'message-item';
+                        div.className = `message-item ${isAck ? 'acknowledged' : ''}`;
                         
                         div.innerHTML = `
-                            <div class="message-header">
-                                <span class="sender-name">${msg.name} さん</span>
-                                <span class="message-time">${msg.time || ''}</span>
+                            <div class="message-content">
+                                <div class="message-header">
+                                    <span class="sender-name">${msg.name} さん</span>
+                                    <span class="message-time">${msg.time || ''}</span>
+                                </div>
+                                <p class="message-text">${msg.text}</p>
                             </div>
-                            <p class="message-text">${msg.text}</p>
+                            <button class="ack-btn ${isAck ? 'acknowledged' : ''}" onclick="acknowledgeMessage(this, '${msgId}')">
+                                ${isAck ? '済み' : '了解'}
+                            </button>
                         `;
                         container.appendChild(div);
                     });
@@ -146,6 +223,17 @@
                 console.error("取得エラー:", error);
             }
         }
+
+        // 「了解」ボタンが押されたときの処理
+        window.acknowledgeMessage = function(btnElement, msgId) {
+            saveAcknowledgedId(msgId);
+            
+            // 該当するメッセージのカード全体とボタンにクラスを追加してグレーアウト
+            const itemElement = btnElement.closest('.message-item');
+            itemElement.classList.add('acknowledged');
+            btnElement.classList.add('acknowledged');
+            btnElement.textContent = '済み';
+        };
 
         fetchMessages();
         setInterval(fetchMessages, 10000);
