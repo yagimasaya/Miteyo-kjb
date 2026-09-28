@@ -147,8 +147,8 @@
         #btnAnswer {
             width: 85vw;
             max-width: 500px;
-            height: 50vh;
-            max-height: 400px;
+            height: 45vh;
+            max-height: 380px;
             background-color: #06c755;
             color: white;
             font-size: 3.5rem;
@@ -171,14 +171,26 @@
             line-height: 1;
         }
         
+        /* 掲示板に戻るボタン（デザイン強化版） */
         .emergency-close {
             position: absolute;
-            bottom: 30px;
-            font-size: 1.2rem;
-            color: #888;
-            text-decoration: underline;
+            bottom: 40px;
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #333333;
+            background-color: #ffffff;
+            border: none;
+            border-radius: 35px;
+            padding: 18px 40px;
             cursor: pointer;
-            padding: 10px;
+            box-shadow: 0 6px 20px rgba(255, 255, 255, 0.25);
+            -webkit-tap-highlight-color: transparent;
+            transition: background-color 0.2s, transform 0.1s;
+        }
+
+        .emergency-close:active {
+            transform: scale(0.95);
+            background-color: #e2e8f0;
         }
     </style>
 </head>
@@ -197,13 +209,13 @@
     </div>
 
     <div id="call-overlay">
-        <!-- onclickのハンドラーを変更 -->
         <a id="btnAnswer" href="#" target="_blank" rel="noopener noreferrer" onclick="handleAnswerClick(event)">
             <span class="phone-icon">📞</span>
             <span>電話に出て！</span>
         </a>
         
-        <div class="emergency-close" onclick="hideOverlayLocally()">[強制的に掲示板に戻る]</div>
+        <!-- 見やすいボタン構造に変更 -->
+        <button class="emergency-close" onclick="hideOverlayLocally()">掲示板に戻る</button>
     </div>
 
     <script>
@@ -250,7 +262,7 @@
                     localHideCall = false;
                 }
                 
-                // 3. メッセージ描画処理（フォールバックを追加してエラーを防止）
+                // 3. メッセージ描画処理
                 const messages = data.messages || [];
                 const checkData = {
                     messages: messages,
@@ -297,7 +309,6 @@
             }
         }
 
-        // タップ時に別タブが開くのを邪魔しないよう非表示処理を遅延実行
         function handleAnswerClick(event) {
             localHideCall = true;
             setTimeout(() => {
