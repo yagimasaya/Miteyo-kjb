@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>父への掲示板</title>
+    <title>父への掲示板 ＆ 通話</title>
     <style>
         html, body {
             height: 100%;
@@ -113,7 +113,6 @@
             transform: scale(0.95);
         }
 
-        /* 既読（済み）になったときのスタイル */
         .message-item.acknowledged {
             background: #e2e8f0 !important;
             border-left-color: #cbd5e1 !important;
@@ -128,11 +127,58 @@
             background-color: #94a3b8 !important;
             box-shadow: none;
         }
+
+        /* ==========================================
+           通話画面（Google Meet）用のオーバーレイ層
+           ========================================== */
+        #call-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100dvh;
+            background-color: #000;
+            z-index: 8888; /* 掲示板より手前、ブラックアウトより後ろ */
+            display: none; /* 初期状態は非表示 */
+            flex-direction: column;
+        }
+        #meetFrame {
+            width: 100%;
+            height: 75%; /* 画面上部75%にGoogle Meetを表示 */
+            border: none;
+        }
+        #hangup-bar {
+            width: 100%;
+            height: 25%; /* 画面下1/4に終了ボタンバー */
+            background-color: #111;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-top: 2px solid #333;
+            box-sizing: border-box;
+        }
+        #btnHangup {
+            width: 85%;
+            height: 75%;
+            background-color: #D32F2F; /* 赤色の切断ボタン */
+            color: white;
+            font-size: 2.2rem;
+            font-weight: bold;
+            border: none;
+            border-radius: 16px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+        }
+        #btnHangup:active {
+            background-color: #B71C1C;
+            transform: scale(0.98);
+        }
     </style>
 </head>
 <body>
     <div id="blackout-screen"></div>
 
+    <!-- 普段の掲示板画面 -->
     <div class="card">
         <h2>伝言板</h2>
         <div id="message-container">
@@ -144,16 +190,29 @@
         </div>
     </div>
 
+    <!-- 通話オーバーレイ画面（発信時に出現） -->
+    <div id="call-overlay">
+        <iframe id="meetFrame" src=""></iframe>
+        <div id="hangup-bar">
+            <button id="btnHangup" onclick="endCall()">📞 通話を終了する</button>
+        </div>
+    </div>
+
     <script>
         const GAS_API_URL = "https://script.google.com/macros/s/AKfycbxQqyTJoDJB4stO6NF3uq0EKv0YrwGbwNwDHeyyUnsc6V4WM0AK3oO-oB23QmFILBjcAg/exec";
         
+        // 【設定】ご自身の固定Google MeetのURL
+        const FIXED_MEET_URL = "https://meet.google.com/abc-defg-hij"; // ←ここに実際の固定URLを設定してください
+
         let lastDataString = "";
+        let isCurrentlyInCall = false;
 
         async function fetchMessages() {
             try {
                 const response = await fetch(GAS_API_URL);
                 const data = await response.json();
                 
+                // 1. ブラックアウト制御
                 const blackoutDiv = document.getElementById('blackout-screen');
                 if (data.isBlackout) {
                     blackoutDiv.style.display = "block";
@@ -161,10 +220,28 @@
                 } else {
                     blackoutDiv.style.display = "none";
                 }
+
+                // 2. 通話開始の検知（GASから `isCalling: true` が返ってきた場合）
+                const callOverlay = document.getElementById('call-overlay');
+                const meetFrame = document.getElementById('meetFrame');
+
+                if (data.isCalling) {
+                    if (!isCurrentlyInCall) {
+                        isCurrentlyInCall = true;
+                        meetFrame.src = FIXED_MEET_URL; // Meetを読み込む
+                        callOverlay.style.display = "flex"; // 画面に表示
+                    }
+                } else {
+                    if (isCurrentlyInCall) {
+                        // こちらから切断していなくて、サーバー側で通話終了になった場合
+                        closeCallUI();
+                    }
+                }
                 
                 const checkData = {
                     messages: data.messages,
-                    acknowledgedIds: data.acknowledgedIds
+                    acknowledgedIds: data.acknowledgedIds,
+                    isCalling: data.isCalling
                 };
                 const dataString = JSON.stringify(checkData);
 
@@ -205,11 +282,35 @@
             }
         }
 
-        // ★トグル処理（押すたびに「了解」と「済み」が切り替わる）
+        // 高齢者が画面下の「通話を終了する」ボタンを押したときの処理
+        window.endCall = async function() {
+            closeCallUI();
+
+            try {
+                // GASへ「通話終了（isCallingをfalseにする）」を通知
+                await fetch(GAS_API_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        action: 'endCall'
+                    })
+                });
+            } catch (error) {
+                console.error("通話終了通知エラー:", error);
+            }
+        }
+
+        // 通話UIを非表示にしてリセットする内部関数
+        function closeCallUI() {
+            isCurrentlyInCall = false;
+            const callOverlay = document.getElementById('call-overlay');
+            const meetFrame = document.getElementById('meetFrame');
+
+            callOverlay.style.display = "none";
+            meetFrame.src = ""; // フレームを空にしてカメラ/マイクを確実に切断
+        }
+
         window.toggleAcknowledge = async function(btnElement, msgId) {
             const itemElement = btnElement.closest('.message-item');
-            
-            // 画面上で即座に状態を反転（サクサク動かすため）
             const isCurrentlyAck = itemElement.classList.contains('acknowledged');
             if (isCurrentlyAck) {
                 itemElement.classList.remove('acknowledged');
@@ -222,7 +323,6 @@
             }
 
             try {
-                // GASへトグル処理を通知
                 await fetch(GAS_API_URL, {
                     method: 'POST',
                     body: JSON.stringify({
@@ -237,7 +337,7 @@
         };
 
         fetchMessages();
-        setInterval(fetchMessages, 10000);
+        setInterval(fetchMessages, 10000); // 10秒ごとにGASの状態をチェック
     </script>
 </body>
 </html>
