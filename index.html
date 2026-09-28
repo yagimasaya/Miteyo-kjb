@@ -144,6 +144,7 @@
             box-sizing: border-box;
         }
         
+        /* buttonからaタグに変更したため、リンク装飾を消す設定を追加 */
         #btnAnswer {
             width: 85vw;
             max-width: 500px;
@@ -162,11 +163,24 @@
             align-items: center;
             justify-content: center;
             gap: 20px;
+            text-decoration: none; /* リンクの下線を消す */
+            -webkit-tap-highlight-color: transparent; /* タップ時の青いハイライトを消す */
         }
 
         .phone-icon {
             font-size: 5rem;
             line-height: 1;
+        }
+        
+        /* 万が一の強制終了ボタン */
+        .emergency-close {
+            position: absolute;
+            bottom: 30px;
+            font-size: 1.2rem;
+            color: #888;
+            text-decoration: underline;
+            cursor: pointer;
+            padding: 10px;
         }
     </style>
 </head>
@@ -187,17 +201,22 @@
 
     <!-- オーバーレイ -->
     <div id="call-overlay">
-        <button id="btnAnswer" onclick="openMeet()">
+        <!-- JSの処理ではなく、target="_blank"による通常の別タブリンクとして開く -->
+        <a id="btnAnswer" href="#" target="_blank" rel="noopener noreferrer" onclick="hideOverlayLocally()">
             <span class="phone-icon">📞</span>
             <span>電話に出て！</span>
-        </button>
+        </a>
+        
+        <!-- テスト・バグ回避用の強制非表示ボタン -->
+        <div class="emergency-close" onclick="hideOverlayLocally()">[強制的に掲示板に戻る]</div>
     </div>
 
     <script>
         const GAS_API_URL = "https://script.google.com/macros/s/AKfycbxQqyTJoDJB4stO6NF3uq0EKv0YrwGbwNwDHeyyUnsc6V4WM0AK3oO-oB23QmFILBjcAg/exec";
 
         let lastDataString = "";
-        let currentMeetUrl = "https://meet.google.com/jma-rmrf-uhv";
+        let lastMeetUrl = "";
+        let localHideCall = false; // 一度出たら、GAS側がfalseになるまでこの画面での再表示をブロックする
 
         async function fetchMessages() {
             try {
@@ -213,17 +232,31 @@
                     blackoutDiv.style.display = "none";
                 }
 
-                if (data.meetUrl) {
-                    currentMeetUrl = data.meetUrl;
-                }
-
-                // 2. 通話フラグの監視（シンプルな判定に戻し、確実に連動させる）
+                // 2. 通話フラグの監視
                 const callOverlay = document.getElementById('call-overlay');
+                const btnAnswer = document.getElementById('btnAnswer');
 
                 if (data.isCalling) {
-                    callOverlay.style.display = "flex";
+                    const currentUrl = data.meetUrl || "https://meet.google.com/jma-rmrf-uhv";
+                    
+                    // 新しいURLが来たら「非表示フラグ」をリセットして鳴らす
+                    if (currentUrl !== lastMeetUrl) {
+                        lastMeetUrl = currentUrl;
+                        localHideCall = false;
+                    }
+
+                    // まだ一度も「電話に出て！」を押していない場合のみ表示
+                    if (!localHideCall) {
+                        callOverlay.style.display = "flex";
+                        // aタグの飛び先(href)を動的にセット
+                        btnAnswer.href = currentUrl;
+                    } else {
+                        callOverlay.style.display = "none";
+                    }
                 } else {
+                    // サーバー側で通話が終了(isCalling=false)したら、完全にリセットする
                     callOverlay.style.display = "none";
+                    localHideCall = false;
                 }
                 
                 // メッセージ描画処理
@@ -272,11 +305,11 @@
             }
         }
 
-        // 「電話に出て！」ボタンが押されたら、確実にGoogle Meetを開く
-        window.openMeet = function() {
-            // アイコンを即座に非表示にしてからページ遷移
+        // 緑のボタン（aタグ）が押された瞬間に、掲示板側のオーバーレイを隠して状態を記憶する
+        window.hideOverlayLocally = function() {
+            localHideCall = true;
             document.getElementById('call-overlay').style.display = 'none';
-            window.location.href = currentMeetUrl;
+            // この後、ブラウザの標準機能(aタグのtarget="_blank")でMeetが別で立ち上がります。
         }
 
         window.toggleAcknowledge = async function(btnElement, msgId) {
