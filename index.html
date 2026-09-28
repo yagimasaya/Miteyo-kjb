@@ -144,7 +144,6 @@
             box-sizing: border-box;
         }
         
-        /* buttonからaタグに変更したため、リンク装飾を消す設定を追加 */
         #btnAnswer {
             width: 85vw;
             max-width: 500px;
@@ -163,8 +162,8 @@
             align-items: center;
             justify-content: center;
             gap: 20px;
-            text-decoration: none; /* リンクの下線を消す */
-            -webkit-tap-highlight-color: transparent; /* タップ時の青いハイライトを消す */
+            text-decoration: none;
+            -webkit-tap-highlight-color: transparent;
         }
 
         .phone-icon {
@@ -172,7 +171,6 @@
             line-height: 1;
         }
         
-        /* 万が一の強制終了ボタン */
         .emergency-close {
             position: absolute;
             bottom: 30px;
@@ -187,7 +185,6 @@
 <body>
     <div id="blackout-screen"></div>
 
-    <!-- 普段の掲示板画面 -->
     <div class="card">
         <h2>伝言板</h2>
         <div id="message-container">
@@ -199,15 +196,13 @@
         </div>
     </div>
 
-    <!-- オーバーレイ -->
     <div id="call-overlay">
-        <!-- JSの処理ではなく、target="_blank"による通常の別タブリンクとして開く -->
-        <a id="btnAnswer" href="#" target="_blank" rel="noopener noreferrer" onclick="hideOverlayLocally()">
+        <!-- onclickのハンドラーを変更 -->
+        <a id="btnAnswer" href="#" target="_blank" rel="noopener noreferrer" onclick="handleAnswerClick(event)">
             <span class="phone-icon">📞</span>
             <span>電話に出て！</span>
         </a>
         
-        <!-- テスト・バグ回避用の強制非表示ボタン -->
         <div class="emergency-close" onclick="hideOverlayLocally()">[強制的に掲示板に戻る]</div>
     </div>
 
@@ -216,7 +211,7 @@
 
         let lastDataString = "";
         let lastMeetUrl = "";
-        let localHideCall = false; // 一度出たら、GAS側がfalseになるまでこの画面での再表示をブロックする
+        let localHideCall = false;
 
         async function fetchMessages() {
             try {
@@ -239,29 +234,26 @@
                 if (data.isCalling) {
                     const currentUrl = data.meetUrl || "https://meet.google.com/jma-rmrf-uhv";
                     
-                    // 新しいURLが来たら「非表示フラグ」をリセットして鳴らす
                     if (currentUrl !== lastMeetUrl) {
                         lastMeetUrl = currentUrl;
                         localHideCall = false;
                     }
 
-                    // まだ一度も「電話に出て！」を押していない場合のみ表示
                     if (!localHideCall) {
                         callOverlay.style.display = "flex";
-                        // aタグの飛び先(href)を動的にセット
                         btnAnswer.href = currentUrl;
                     } else {
                         callOverlay.style.display = "none";
                     }
                 } else {
-                    // サーバー側で通話が終了(isCalling=false)したら、完全にリセットする
                     callOverlay.style.display = "none";
                     localHideCall = false;
                 }
                 
-                // メッセージ描画処理
+                // 3. メッセージ描画処理（フォールバックを追加してエラーを防止）
+                const messages = data.messages || [];
                 const checkData = {
-                    messages: data.messages,
+                    messages: messages,
                     acknowledgedIds: data.acknowledgedIds,
                     isCalling: data.isCalling,
                     meetUrl: data.meetUrl
@@ -276,7 +268,7 @@
                     
                     const ackIds = data.acknowledgedIds || [];
 
-                    data.messages.forEach((msg) => {
+                    messages.forEach((msg) => {
                         const msgId = `${msg.name}_${msg.time}_${msg.text}`;
                         const isAck = ackIds.includes(msgId);
 
@@ -286,10 +278,10 @@
                         div.innerHTML = `
                             <div class="message-content">
                                 <div class="message-header">
-                                    <span class="sender-name">${msg.name} さん</span>
+                                    <span class="sender-name">${msg.name || ''} さん</span>
                                     <span class="message-time">${msg.time || ''}</span>
                                 </div>
-                                <p class="message-text">${msg.text}</p>
+                                <p class="message-text">${msg.text || ''}</p>
                             </div>
                             <button class="ack-btn ${isAck ? 'acknowledged' : ''}" onclick="toggleAcknowledge(this, '${msgId}')">
                                 ${isAck ? '済み' : '了解'}
@@ -305,11 +297,17 @@
             }
         }
 
-        // 緑のボタン（aタグ）が押された瞬間に、掲示板側のオーバーレイを隠して状態を記憶する
+        // タップ時に別タブが開くのを邪魔しないよう非表示処理を遅延実行
+        function handleAnswerClick(event) {
+            localHideCall = true;
+            setTimeout(() => {
+                document.getElementById('call-overlay').style.display = 'none';
+            }, 300);
+        }
+
         window.hideOverlayLocally = function() {
             localHideCall = true;
             document.getElementById('call-overlay').style.display = 'none';
-            // この後、ブラウザの標準機能(aタグのtarget="_blank")でMeetが別で立ち上がります。
         }
 
         window.toggleAcknowledge = async function(btnElement, msgId) {
