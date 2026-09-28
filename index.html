@@ -293,9 +293,21 @@
             }
         }
 
-        // 「通話に参加する」ボタン：新しいタブ（または直接）でGoogle Meetを開く
+        // 「通話に参加する」ボタン：アプリ起動またはブラウザでの安全な直接オープン
         window.openMeet = function() {
-            window.open(currentMeetUrl, '_blank');
+            const match = currentMeetUrl.match(/meet\.google\.com\/([a-z\-]+)/);
+            const meetingCode = match ? match[1] : "jma-rmrf-uhv";
+
+            // AndroidのMeetアプリを直接呼び出すインテントスキーム
+            const intentUrl = `intent://meet.google.com/${meetingCode}#Intent;package=com.google.android.apps.meetings;action=android.intent.action.VIEW;category=android.intent.category.BROWSABLE;end;`;
+            
+            try {
+                // まずMeetアプリの起動を試みる
+                window.location.href = intentUrl;
+            } catch (e) {
+                // アプリがない場合などは通常の新規ウィンドウ/タブで開く
+                window.open(currentMeetUrl, '_blank');
+            }
         }
 
         // 「終了して掲示板に戻る」ボタン：サーバーに通話終了を通知し、画面を元に戻す
