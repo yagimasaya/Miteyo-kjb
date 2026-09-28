@@ -129,7 +129,7 @@
         }
 
         /* ----------------------------------------------------
-           超巨大な「電話に出て！」受話器ボタンオーバーレイ
+           オーバーレイ関連
            ---------------------------------------------------- */
         #call-overlay {
             position: fixed;
@@ -145,6 +145,8 @@
             align-items: center;
             box-sizing: border-box;
         }
+        
+        /* 着信時のボタン */
         #btnAnswer {
             width: 85vw;
             max-width: 500px;
@@ -168,6 +170,32 @@
         #btnAnswer:active {
             transform: scale(0.95);
         }
+
+        /* 通話終了後に表示する「終了・掲示板に戻る」ボタン */
+        #btnReturnBoard {
+            width: 85vw;
+            max-width: 500px;
+            height: 40vh;
+            max-height: 300px;
+            background-color: #ff4d4f;
+            color: white;
+            font-size: 2.8rem;
+            font-weight: bold;
+            border: none;
+            border-radius: 40px;
+            cursor: pointer;
+            box-shadow: 0 10px 30px rgba(255, 77, 79, 0.5);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            transition: transform 0.1s;
+        }
+        #btnReturnBoard:active {
+            transform: scale(0.95);
+        }
+
         .phone-icon {
             font-size: 5rem;
             line-height: 1;
@@ -189,11 +217,18 @@
         </div>
     </div>
 
-    <!-- 「AAA通話」を検知したときに出現する超シンプル・超巨大ボタン -->
+    <!-- オーバーレイ（着信ボタン ＆ 終了ボタン） -->
     <div id="call-overlay">
+        <!-- 着信時：「電話に出て！」 -->
         <button id="btnAnswer" onclick="openMeet()">
             <span class="phone-icon">📞</span>
             <span>電話に出て！</span>
+        </button>
+
+        <!-- 通話後：「終了・掲示板に戻る」 -->
+        <button id="btnReturnBoard" onclick="returnToBoard()">
+            <span class="phone-icon">🔙</span>
+            <span>終了・掲示板に戻る</span>
         </button>
     </div>
 
@@ -202,6 +237,7 @@
 
         let lastDataString = "";
         let currentMeetUrl = "https://meet.google.com/jma-rmrf-uhv";
+        let wasCalling = false; // 前回の通話フラグを記憶
 
         async function fetchMessages() {
             try {
@@ -222,12 +258,29 @@
                     currentMeetUrl = data.meetUrl;
                 }
 
-                // 2. 通話フラグの監視（LINEから「AAA通話」が来たら巨大ボタンを表示）
+                // 2. 通話フラグの監視
                 const callOverlay = document.getElementById('call-overlay');
+                const btnAnswer = document.getElementById('btnAnswer');
+                const btnReturnBoard = document.getElementById('btnReturnBoard');
+
                 if (data.isCalling) {
+                    // LINEから通話要求が来ているとき
                     callOverlay.style.display = "flex";
+                    btnAnswer.style.display = "flex";
+                    btnReturnBoard.style.display = "none";
+                    wasCalling = true; // 通話中フラグを立てる
                 } else {
-                    callOverlay.style.display = "none";
+                    // 通話要求がオフになったとき
+                    if (wasCalling) {
+                        // 「さっきまで通話中だった（＝通話が終了した）」場合、
+                        // 画面に「終了・掲示板に戻る」の赤いボタンを出して止める
+                        callOverlay.style.display = "flex";
+                        btnAnswer.style.display = "none";
+                        btnReturnBoard.style.display = "flex";
+                    } else {
+                        // 通常時はオーバーレイを隠す
+                        callOverlay.style.display = "none";
+                    }
                 }
                 
                 const checkData = {
@@ -275,9 +328,15 @@
             }
         }
 
-        // 「電話に出て！」ボタンが押されたら、カレンダー等から取得したGoogle Meetを開く
+        // 「電話に出て！」ボタンが押されたらGoogle Meetを開く
         window.openMeet = function() {
             window.location.href = currentMeetUrl;
+        }
+
+        // 「終了・掲示板に戻る」ボタンが押されたら状態をリセットして掲示板に戻る
+        window.returnToBoard = function() {
+            wasCalling = false;
+            document.getElementById('call-overlay').style.display = 'none';
         }
 
         // 既読・未読トグル処理
