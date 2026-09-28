@@ -171,7 +171,7 @@
             transform: scale(0.95);
         }
 
-        /* 通話終了後に表示する「終了・掲示板に戻る」ボタン */
+        /* 通話後：「終了・掲示板に戻る」 */
         #btnReturnBoard {
             width: 85vw;
             max-width: 500px;
@@ -200,6 +200,15 @@
             font-size: 5rem;
             line-height: 1;
         }
+
+        /* 緊急解除用の説明書き */
+        .emergency-hint {
+            position: absolute;
+            bottom: 30px;
+            color: #888;
+            font-size: 1rem;
+            text-align: center;
+        }
     </style>
 </head>
 <body>
@@ -218,7 +227,7 @@
     </div>
 
     <!-- オーバーレイ（着信ボタン ＆ 終了ボタン） -->
-    <div id="call-overlay">
+    <div id="call-overlay" onclick="forceCloseOverlay(event)">
         <!-- 着信時：「電話に出て！」 -->
         <button id="btnAnswer" onclick="openMeet()">
             <span class="phone-icon">📞</span>
@@ -230,6 +239,8 @@
             <span class="phone-icon">🔙</span>
             <span>終了・掲示板に戻る</span>
         </button>
+
+        <div class="emergency-hint">※ボタン以外の黒い部分を長押しまたはダブルタップすると強制的に掲示板に戻ります</div>
     </div>
 
     <script>
@@ -237,7 +248,7 @@
 
         let lastDataString = "";
         let currentMeetUrl = "https://meet.google.com/jma-rmrf-uhv";
-        let wasCalling = false; // 前回の通話フラグを記憶
+        let wasCalling = false; 
 
         async function fetchMessages() {
             try {
@@ -253,7 +264,6 @@
                     blackoutDiv.style.display = "none";
                 }
 
-                // カレンダーから取得した最新のMeet URLを保持
                 if (data.meetUrl) {
                     currentMeetUrl = data.meetUrl;
                 }
@@ -263,22 +273,23 @@
                 const btnAnswer = document.getElementById('btnAnswer');
                 const btnReturnBoard = document.getElementById('btnReturnBoard');
 
+                // ★ もしサーバー側で isCalling が false に戻っていたら、自動的にフラグをクリアする
+                if (!data.isCalling && wasCalling && callOverlay.style.display === "flex" && btnReturnBoard.style.display === "none") {
+                    wasCalling = false;
+                }
+
                 if (data.isCalling) {
-                    // LINEから通話要求が来ているとき
                     callOverlay.style.display = "flex";
                     btnAnswer.style.display = "flex";
                     btnReturnBoard.style.display = "none";
-                    wasCalling = true; // 通話中フラグを立てる
+                    wasCalling = true; 
                 } else {
-                    // 通話要求がオフになったとき
                     if (wasCalling) {
-                        // 「さっきまで通話中だった（＝通話が終了した）」場合、
-                        // 画面に「終了・掲示板に戻る」の赤いボタンを出して止める
                         callOverlay.style.display = "flex";
                         btnAnswer.style.display = "none";
                         btnReturnBoard.style.display = "flex";
                     } else {
-                        // 通常時はオーバーレイを隠す
+                        // 通常時は必ず非表示にする
                         callOverlay.style.display = "none";
                     }
                 }
@@ -328,18 +339,32 @@
             }
         }
 
-        // 「電話に出て！」ボタンが押されたらGoogle Meetを開く
         window.openMeet = function() {
             window.location.href = currentMeetUrl;
         }
 
-        // 「終了・掲示板に戻る」ボタンが押されたら状態をリセットして掲示板に戻る
         window.returnToBoard = function() {
             wasCalling = false;
             document.getElementById('call-overlay').style.display = 'none';
         }
 
-        // 既読・未読トグル処理
+        // ★万が一消えないときの緊急脱出（黒い背景部分をダブルクリック・ダブルタップすると強制的に消える）
+        let lastTap = 0;
+        window.forceCloseOverlay = function(e) {
+            // ボタン自体が押された時は発動させない
+            if (e.target.tagName === 'BUTTON' || e.target.closest('button')) return;
+
+            const currentTime = new Date().getTime();
+            const tapLength = currentTime - lastTap;
+            if (tapLength < 500 && tapLength > 0) {
+                // ダブルタップ検出で強制的にオーバーレイを消す
+                wasCalling = false;
+                document.getElementById('call-overlay').style.display = 'none';
+                e.preventDefault();
+            }
+            lastTap = currentTime;
+        }
+
         window.toggleAcknowledge = async function(btnElement, msgId) {
             const itemElement = btnElement.closest('.message-item');
             const isCurrentlyAck = itemElement.classList.contains('acknowledged');
@@ -370,7 +395,7 @@
         };
 
         fetchMessages();
-        setInterval(fetchMessages, 10000); // 10秒ごとに状態をチェック
+        setInterval(fetchMessages, 10000);
     </script>
 </body>
 </html>
