@@ -202,7 +202,7 @@
         const GAS_API_URL = "https://script.google.com/macros/s/AKfycbxQqyTJoDJB4stO6NF3uq0EKv0YrwGbwNwDHeyyUnsc6V4WM0AK3oO-oB23QmFILBjcAg/exec";
         
         // 【設定】ご自身の固定Google MeetのURL
-        const FIXED_MEET_URL = "https://meet.google.com/abc-defg-hij";
+        const FIXED_MEET_URL = "https://meet.google.com/abc-defg-hij"; // ←必要に応じて実際のURLに変更してください
 
         let lastDataString = "";
         let isCurrentlyInCall = false;
@@ -221,7 +221,7 @@
                     blackoutDiv.style.display = "none";
                 }
 
-                // 2. 通話開始の検知
+                // 2. 通話開始の検知（LINEから「AAA通話」が送られてきたら発動）
                 const callOverlay = document.getElementById('call-overlay');
                 const meetFrame = document.getElementById('meetFrame');
 
@@ -281,7 +281,7 @@
             }
         }
 
-        // 通話終了ボタン（CORS対策：URLSearchParamsを使用）
+        // 高齢者が画面下の「通話を終了する」ボタンを押したときの処理
         window.endCall = async function() {
             closeCallUI();
 
@@ -297,6 +297,7 @@
             }
         }
 
+        // 通話UIを非表示にしてリセットする内部関数
         function closeCallUI() {
             isCurrentlyInCall = false;
             const callOverlay = document.getElementById('call-overlay');
@@ -306,7 +307,7 @@
             meetFrame.src = "";
         }
 
-        // 了解ボタン（CORS対策：URLSearchParamsを使用）
+        // 既読・未読トグル処理
         window.toggleAcknowledge = async function(btnElement, msgId) {
             const itemElement = btnElement.closest('.message-item');
             const isCurrentlyAck = itemElement.classList.contains('acknowledged');
@@ -337,7 +338,7 @@
         };
 
         fetchMessages();
-        setInterval(fetchMessages, 10000);
+        setInterval(fetchMessages, 10000); // 10秒ごとにGASの状態をチェック
     </script>
 </body>
 </html>
