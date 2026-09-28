@@ -198,7 +198,6 @@
 
         let lastDataString = "";
         let currentMeetUrl = "https://meet.google.com/jma-rmrf-uhv";
-        let localIgnoredCallUrl = ""; // このURLの通話は一度出たので非表示にする
 
         async function fetchMessages() {
             try {
@@ -218,16 +217,10 @@
                     currentMeetUrl = data.meetUrl;
                 }
 
-                // 2. 通話フラグの監視
+                // 2. 通話フラグの監視（シンプルな判定に戻し、確実に連動させる）
                 const callOverlay = document.getElementById('call-overlay');
 
-                // サーバー側で通話がオフになったら、無視リストをクリアする
-                if (!data.isCalling) {
-                    localIgnoredCallUrl = "";
-                }
-
-                // 「通話中」かつ「この通話はまだこの端末でボタンを押していない」場合のみ表示
-                if (data.isCalling && localIgnoredCallUrl !== currentMeetUrl) {
+                if (data.isCalling) {
                     callOverlay.style.display = "flex";
                 } else {
                     callOverlay.style.display = "none";
@@ -279,18 +272,11 @@
             }
         }
 
-        // 「電話に出て！」ボタンが押された瞬間、アイコンを消してMeetへ飛ぶ
+        // 「電話に出て！」ボタンが押されたら、確実にGoogle Meetを開く
         window.openMeet = function() {
-            // 1. 即座にこのアイコン画面を消す（裏の掲示板を表示状態にする）
+            // アイコンを即座に非表示にしてからページ遷移
             document.getElementById('call-overlay').style.display = 'none';
-            
-            // 2. 「このURLの通話はもうこの端末で処理した」と記憶させ、復活を防ぐ
-            localIgnoredCallUrl = currentMeetUrl;
-
-            // 3. 少しだけ遅らせてGoogle Meetへページ遷移（画面が消えた体感を確実にさせるため）
-            setTimeout(() => {
-                window.location.href = currentMeetUrl;
-            }, 100);
+            window.location.href = currentMeetUrl;
         }
 
         window.toggleAcknowledge = async function(btnElement, msgId) {
