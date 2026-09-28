@@ -128,50 +128,59 @@
             box-shadow: none;
         }
 
-        /* ==========================================
-            通話画面（Google Meet）用のオーバーレイ層
-            ========================================== */
+        /* ----------------------------------------------------
+           通話中オーバーレイ画面（画面全体を覆ってMeetへ誘導）
+           ---------------------------------------------------- */
         #call-overlay {
             position: fixed;
             top: 0;
             left: 0;
             width: 100vw;
             height: 100dvh;
-            background-color: #000;
+            background-color: #111;
             z-index: 8888;
             display: none;
             flex-direction: column;
-        }
-        #meetFrame {
-            width: 100%;
-            height: 75%;
-            border: none;
-        }
-        #hangup-bar {
-            width: 100%;
-            height: 25%;
-            background-color: #111;
-            display: flex;
             justify-content: center;
             align-items: center;
-            border-top: 2px solid #333;
+            color: white;
+            text-align: center;
+            padding: 20px;
             box-sizing: border-box;
         }
-        #btnHangup {
-            width: 85%;
-            height: 75%;
-            background-color: #D32F2F;
-            color: white;
-            font-size: 2.2rem;
+        #call-overlay h1 {
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+        }
+        #call-overlay p {
+            font-size: 1.5rem;
+            color: #aaa;
+            margin-bottom: 40px;
+        }
+        .call-btn-group {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            width: 80%;
+            max-width: 400px;
+        }
+        .btn-meet-action {
+            width: 100%;
+            height: 80px;
+            font-size: 1.8rem;
             font-weight: bold;
             border: none;
             border-radius: 16px;
             cursor: pointer;
             box-shadow: 0 4px 15px rgba(0,0,0,0.4);
         }
-        #btnHangup:active {
-            background-color: #B71C1C;
-            transform: scale(0.98);
+        #btnJoinMeet {
+            background-color: #06c755;
+            color: white;
+        }
+        #btnEndCall {
+            background-color: #D32F2F;
+            color: white;
         }
     </style>
 </head>
@@ -190,22 +199,22 @@
         </div>
     </div>
 
-    <!-- 通話オーバーレイ画面（発信時に出現） -->
+    <!-- 「AAA通話」を検知したときに出現する全画面オーバーレイ -->
     <div id="call-overlay">
-        <iframe id="meetFrame" src=""></iframe>
-        <div id="hangup-bar">
-            <button id="btnHangup" onclick="endCall()">📞 通話を終了する</button>
+        <h1>📞 通話の呼び出しがあります</h1>
+        <p>ボタンを押してGoogle Meetに参加してください</p>
+        <div class="call-btn-group">
+            <button id="btnJoinMeet" class="btn-meet-action" onclick="openMeet()">通話に参加する</button>
+            <button id="btnEndCall" class="btn-meet-action" onclick="endCall()">終了して掲示板に戻る</button>
         </div>
     </div>
 
     <script>
         const GAS_API_URL = "https://script.google.com/macros/s/AKfycbxQqyTJoDJB4stO6NF3uq0EKv0YrwGbwNwDHeyyUnsc6V4WM0AK3oO-oB23QmFILBjcAg/exec";
-        
-        // 【設定】ご自身の固定Google MeetのURL
-        const FIXED_MEET_URL = "https://meet.google.com/jma-rmrf-uhv"; // ←必要に応じて実際のURLに変更してください
 
         let lastDataString = "";
-        let isCurrentlyInCall = false;
+        let isCallingState = false;
+        let currentMeetUrl = "https://meet.google.com/jma-rmrf-uhv";
 
         async function fetchMessages() {
             try {
@@ -221,26 +230,29 @@
                     blackoutDiv.style.display = "none";
                 }
 
-                // 2. 通話開始の検知（LINEから「AAA通話」が送られてきたら発動）
-                const callOverlay = document.getElementById('call-overlay');
-                const meetFrame = document.getElementById('meetFrame');
+                // カレンダーから取得した最新のMeet URLを保持
+                if (data.meetUrl) {
+                    currentMeetUrl = data.meetUrl;
+                }
 
+                // 2. 通話フラグの監視（LINEから「AAA通話」が来たら画面を表示）
+                const callOverlay = document.getElementById('call-overlay');
                 if (data.isCalling) {
-                    if (!isCurrentlyInCall) {
-                        isCurrentlyInCall = true;
-                        meetFrame.src = FIXED_MEET_URL;
-                        callOverlay.style.display = "flex";
-                    }
+                    isCallingState = true;
+                    callOverlay.style.display = "flex";
                 } else {
-                    if (isCurrentlyInCall) {
-                        closeCallUI();
+                    // フラグがオフ（終了）になったら、自動的にオーバーレイを消して掲示板状態に戻す
+                    if (isCallingState) {
+                        isCallingState = false;
+                        callOverlay.style.display = "none";
                     }
                 }
                 
                 const checkData = {
                     messages: data.messages,
                     acknowledgedIds: data.acknowledgedIds,
-                    isCalling: data.isCalling
+                    isCalling: data.isCalling,
+                    meetUrl: data.meetUrl
                 };
                 const dataString = JSON.stringify(checkData);
 
@@ -281,9 +293,15 @@
             }
         }
 
-        // 高齢者が画面下の「通話を終了する」ボタンを押したときの処理
+        // 「通話に参加する」ボタン：新しいタブ（または直接）でGoogle Meetを開く
+        window.openMeet = function() {
+            window.open(currentMeetUrl, '_blank');
+        }
+
+        // 「終了して掲示板に戻る」ボタン：サーバーに通話終了を通知し、画面を元に戻す
         window.endCall = async function() {
-            closeCallUI();
+            isCallingState = false;
+            document.getElementById('call-overlay').style.display = "none";
 
             try {
                 await fetch(GAS_API_URL, {
@@ -295,16 +313,6 @@
             } catch (error) {
                 console.error("通話終了通知エラー:", error);
             }
-        }
-
-        // 通話UIを非表示にしてリセットする内部関数
-        function closeCallUI() {
-            isCurrentlyInCall = false;
-            const callOverlay = document.getElementById('call-overlay');
-            const meetFrame = document.getElementById('meetFrame');
-
-            callOverlay.style.display = "none";
-            meetFrame.src = "";
         }
 
         // 既読・未読トグル処理
@@ -338,7 +346,7 @@
         };
 
         fetchMessages();
-        setInterval(fetchMessages, 10000); // 10秒ごとにGASの状態をチェック
+        setInterval(fetchMessages, 10000); // 10秒ごとに状態をチェック
     </script>
 </body>
 </html>
