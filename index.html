@@ -147,8 +147,8 @@
         #btnAnswer {
             width: 85vw;
             max-width: 500px;
-            height: 45vh;
-            max-height: 380px;
+            height: 50vh;
+            max-height: 400px;
             background-color: #06c755;
             color: white;
             font-size: 3.5rem;
@@ -174,23 +174,23 @@
         /* 掲示板に戻るボタン（デザイン強化版） */
         .emergency-close {
             position: absolute;
-            bottom: 40px;
-            font-size: 1.8rem;
+            bottom: 30px;
+            font-size: 1.6rem;
             font-weight: bold;
-            color: #333333;
-            background-color: #ffffff;
-            border: none;
-            border-radius: 35px;
-            padding: 18px 40px;
+            color: #ffffff;
+            background-color: #4a5568;
+            border: 2px solid #718096;
+            border-radius: 16px;
+            padding: 14px 28px;
             cursor: pointer;
-            box-shadow: 0 6px 20px rgba(255, 255, 255, 0.25);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            text-decoration: none;
+            transition: all 0.15s ease;
             -webkit-tap-highlight-color: transparent;
-            transition: background-color 0.2s, transform 0.1s;
         }
-
         .emergency-close:active {
             transform: scale(0.95);
-            background-color: #e2e8f0;
+            background-color: #2d3748;
         }
     </style>
 </head>
@@ -214,7 +214,7 @@
             <span>電話に出て！</span>
         </a>
         
-        <!-- 見やすいボタン構造に変更 -->
+        <!-- ボタン化された非表示ボタン -->
         <button class="emergency-close" onclick="hideOverlayLocally()">掲示板に戻る</button>
     </div>
 
