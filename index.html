@@ -128,9 +128,7 @@
             box-shadow: none;
         }
 
-        /* ----------------------------------------------------
-           オーバーレイ関連
-           ---------------------------------------------------- */
+        /* オーバーレイ関連 */
         #call-overlay {
             position: fixed;
             top: 0;
@@ -146,7 +144,6 @@
             box-sizing: border-box;
         }
         
-        /* 着信時のボタン */
         #btnAnswer {
             width: 85vw;
             max-width: 500px;
@@ -165,13 +162,8 @@
             align-items: center;
             justify-content: center;
             gap: 20px;
-            transition: transform 0.1s;
-        }
-        #btnAnswer:active {
-            transform: scale(0.95);
         }
 
-        /* 通話後：「終了・掲示板に戻る」 */
         #btnReturnBoard {
             width: 85vw;
             max-width: 500px;
@@ -190,10 +182,6 @@
             align-items: center;
             justify-content: center;
             gap: 20px;
-            transition: transform 0.1s;
-        }
-        #btnReturnBoard:active {
-            transform: scale(0.95);
         }
 
         .phone-icon {
@@ -201,7 +189,6 @@
             line-height: 1;
         }
 
-        /* 緊急解除用の説明書き */
         .emergency-hint {
             position: absolute;
             bottom: 30px;
@@ -226,21 +213,19 @@
         </div>
     </div>
 
-    <!-- オーバーレイ（着信ボタン ＆ 終了ボタン） -->
+    <!-- オーバーレイ -->
     <div id="call-overlay" onclick="forceCloseOverlay(event)">
-        <!-- 着信時：「電話に出て！」 -->
         <button id="btnAnswer" onclick="openMeet()">
             <span class="phone-icon">📞</span>
             <span>電話に出て！</span>
         </button>
 
-        <!-- 通話後：「終了・掲示板に戻る」 -->
         <button id="btnReturnBoard" onclick="returnToBoard()">
             <span class="phone-icon">🔙</span>
             <span>終了・掲示板に戻る</span>
         </button>
 
-        <div class="emergency-hint">※ボタン以外の黒い部分を長押しまたはダブルタップすると強制的に掲示板に戻ります</div>
+        <div class="emergency-hint">※ダブルタップすると強制的に掲示板に戻ります</div>
     </div>
 
     <script>
@@ -248,7 +233,7 @@
 
         let lastDataString = "";
         let currentMeetUrl = "https://meet.google.com/jma-rmrf-uhv";
-        let wasCalling = false; 
+        let dismissedCallId = null; // 一度閉じた（無視した）通話の重複を防ぐためのID
 
         async function fetchMessages() {
             try {
@@ -273,27 +258,23 @@
                 const btnAnswer = document.getElementById('btnAnswer');
                 const btnReturnBoard = document.getElementById('btnReturnBoard');
 
-                // ★ もしサーバー側で isCalling が false に戻っていたら、自動的にフラグをクリアする
-                if (!data.isCalling && wasCalling && callOverlay.style.display === "flex" && btnReturnBoard.style.display === "none") {
-                    wasCalling = false;
-                }
+                // サーバーから送られてくるデータの状態をユニークなキーとして扱う
+                const currentCallSignature = `${data.meetUrl}_${data.isCalling}`;
 
                 if (data.isCalling) {
-                    callOverlay.style.display = "flex";
-                    btnAnswer.style.display = "flex";
-                    btnReturnBoard.style.display = "none";
-                    wasCalling = true; 
-                } else {
-                    if (wasCalling) {
+                    // もしユーザーがこの通話を「閉じた（dismissedCallId）」ものでなければ表示する
+                    if (dismissedCallId !== currentCallSignature) {
                         callOverlay.style.display = "flex";
-                        btnAnswer.style.display = "none";
-                        btnReturnBoard.style.display = "flex";
-                    } else {
-                        // 通常時は必ず非表示にする
-                        callOverlay.style.display = "none";
+                        btnAnswer.style.display = "flex";
+                        btnReturnBoard.style.display = "none";
                     }
+                } else {
+                    // サーバー側で通話がオフになったら、閉じる記憶をリセットして通常に戻す
+                    dismissedCallId = null;
+                    callOverlay.style.display = "none";
                 }
                 
+                // メッセージ描画処理
                 const checkData = {
                     messages: data.messages,
                     acknowledgedIds: data.acknowledgedIds,
@@ -343,23 +324,22 @@
             window.location.href = currentMeetUrl;
         }
 
+        // 「終了・掲示板に戻る」またはダブルタップされた時
         window.returnToBoard = function() {
-            wasCalling = false;
+            const currentCallSignature = `${currentMeetUrl}_true`;
+            dismissedCallId = currentCallSignature; // 「この通話はもう画面を出さない」と記録
             document.getElementById('call-overlay').style.display = 'none';
         }
 
-        // ★万が一消えないときの緊急脱出（黒い背景部分をダブルクリック・ダブルタップすると強制的に消える）
+        // 緊急脱出（ダブルタップ）
         let lastTap = 0;
         window.forceCloseOverlay = function(e) {
-            // ボタン自体が押された時は発動させない
             if (e.target.tagName === 'BUTTON' || e.target.closest('button')) return;
 
             const currentTime = new Date().getTime();
             const tapLength = currentTime - lastTap;
             if (tapLength < 500 && tapLength > 0) {
-                // ダブルタップ検出で強制的にオーバーレイを消す
-                wasCalling = false;
-                document.getElementById('call-overlay').style.display = 'none';
+                returnToBoard();
                 e.preventDefault();
             }
             lastTap = currentTime;
