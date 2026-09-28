@@ -164,37 +164,9 @@
             gap: 20px;
         }
 
-        #btnReturnBoard {
-            width: 85vw;
-            max-width: 500px;
-            height: 40vh;
-            max-height: 300px;
-            background-color: #ff4d4f;
-            color: white;
-            font-size: 2.8rem;
-            font-weight: bold;
-            border: none;
-            border-radius: 40px;
-            cursor: pointer;
-            box-shadow: 0 10px 30px rgba(255, 77, 79, 0.5);
-            display: none;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 20px;
-        }
-
         .phone-icon {
             font-size: 5rem;
             line-height: 1;
-        }
-
-        .emergency-hint {
-            position: absolute;
-            bottom: 30px;
-            color: #888;
-            font-size: 1rem;
-            text-align: center;
         }
     </style>
 </head>
@@ -214,18 +186,11 @@
     </div>
 
     <!-- オーバーレイ -->
-    <div id="call-overlay" onclick="forceCloseOverlay(event)">
+    <div id="call-overlay">
         <button id="btnAnswer" onclick="openMeet()">
             <span class="phone-icon">📞</span>
             <span>電話に出て！</span>
         </button>
-
-        <button id="btnReturnBoard" onclick="returnToBoard()">
-            <span class="phone-icon">🔙</span>
-            <span>終了・掲示板に戻る</span>
-        </button>
-
-        <div class="emergency-hint">※ダブルタップすると強制的に掲示板に戻ります</div>
     </div>
 
     <script>
@@ -233,7 +198,7 @@
 
         let lastDataString = "";
         let currentMeetUrl = "https://meet.google.com/jma-rmrf-uhv";
-        let dismissedCallId = null; // 一度閉じた（無視した）通話の重複を防ぐためのID
+        let localIgnoredCallUrl = ""; // このURLの通話は一度出たので非表示にする
 
         async function fetchMessages() {
             try {
@@ -255,22 +220,16 @@
 
                 // 2. 通話フラグの監視
                 const callOverlay = document.getElementById('call-overlay');
-                const btnAnswer = document.getElementById('btnAnswer');
-                const btnReturnBoard = document.getElementById('btnReturnBoard');
 
-                // サーバーから送られてくるデータの状態をユニークなキーとして扱う
-                const currentCallSignature = `${data.meetUrl}_${data.isCalling}`;
+                // サーバー側で通話がオフになったら、無視リストをクリアする
+                if (!data.isCalling) {
+                    localIgnoredCallUrl = "";
+                }
 
-                if (data.isCalling) {
-                    // もしユーザーがこの通話を「閉じた（dismissedCallId）」ものでなければ表示する
-                    if (dismissedCallId !== currentCallSignature) {
-                        callOverlay.style.display = "flex";
-                        btnAnswer.style.display = "flex";
-                        btnReturnBoard.style.display = "none";
-                    }
+                // 「通話中」かつ「この通話はまだこの端末でボタンを押していない」場合のみ表示
+                if (data.isCalling && localIgnoredCallUrl !== currentMeetUrl) {
+                    callOverlay.style.display = "flex";
                 } else {
-                    // サーバー側で通話がオフになったら、閉じる記憶をリセットして通常に戻す
-                    dismissedCallId = null;
                     callOverlay.style.display = "none";
                 }
                 
@@ -320,29 +279,18 @@
             }
         }
 
+        // 「電話に出て！」ボタンが押された瞬間、アイコンを消してMeetへ飛ぶ
         window.openMeet = function() {
-            window.location.href = currentMeetUrl;
-        }
-
-        // 「終了・掲示板に戻る」またはダブルタップされた時
-        window.returnToBoard = function() {
-            const currentCallSignature = `${currentMeetUrl}_true`;
-            dismissedCallId = currentCallSignature; // 「この通話はもう画面を出さない」と記録
+            // 1. 即座にこのアイコン画面を消す（裏の掲示板を表示状態にする）
             document.getElementById('call-overlay').style.display = 'none';
-        }
+            
+            // 2. 「このURLの通話はもうこの端末で処理した」と記憶させ、復活を防ぐ
+            localIgnoredCallUrl = currentMeetUrl;
 
-        // 緊急脱出（ダブルタップ）
-        let lastTap = 0;
-        window.forceCloseOverlay = function(e) {
-            if (e.target.tagName === 'BUTTON' || e.target.closest('button')) return;
-
-            const currentTime = new Date().getTime();
-            const tapLength = currentTime - lastTap;
-            if (tapLength < 500 && tapLength > 0) {
-                returnToBoard();
-                e.preventDefault();
-            }
-            lastTap = currentTime;
+            // 3. 少しだけ遅らせてGoogle Meetへページ遷移（画面が消えた体感を確実にさせるため）
+            setTimeout(() => {
+                window.location.href = currentMeetUrl;
+            }, 100);
         }
 
         window.toggleAcknowledge = async function(btnElement, msgId) {
