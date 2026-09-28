@@ -129,7 +129,7 @@
         }
 
         /* ----------------------------------------------------
-           通話中オーバーレイ画面（画面全体を覆ってMeetへ誘導）
+           超巨大な「電話に出て！」受話器ボタンオーバーレイ
            ---------------------------------------------------- */
         #call-overlay {
             position: fixed;
@@ -137,50 +137,40 @@
             left: 0;
             width: 100vw;
             height: 100dvh;
-            background-color: #111;
+            background-color: rgba(0, 0, 0, 0.9);
             z-index: 8888;
             display: none;
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            color: white;
-            text-align: center;
-            padding: 20px;
             box-sizing: border-box;
         }
-        #call-overlay h1 {
-            font-size: 2.5rem;
-            margin-bottom: 20px;
-        }
-        #call-overlay p {
-            font-size: 1.5rem;
-            color: #aaa;
-            margin-bottom: 40px;
-        }
-        .call-btn-group {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-            width: 80%;
-            max-width: 400px;
-        }
-        .btn-meet-action {
-            width: 100%;
-            height: 80px;
-            font-size: 1.8rem;
-            font-weight: bold;
-            border: none;
-            border-radius: 16px;
-            cursor: pointer;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.4);
-        }
-        #btnJoinMeet {
+        #btnAnswer {
+            width: 85vw;
+            max-width: 500px;
+            height: 50vh;
+            max-height: 400px;
             background-color: #06c755;
             color: white;
+            font-size: 3.5rem;
+            font-weight: bold;
+            border: none;
+            border-radius: 40px;
+            cursor: pointer;
+            box-shadow: 0 10px 30px rgba(6, 199, 85, 0.5);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            transition: transform 0.1s;
         }
-        #btnEndCall {
-            background-color: #D32F2F;
-            color: white;
+        #btnAnswer:active {
+            transform: scale(0.95);
+        }
+        .phone-icon {
+            font-size: 5rem;
+            line-height: 1;
         }
     </style>
 </head>
@@ -199,21 +189,18 @@
         </div>
     </div>
 
-    <!-- 「AAA通話」を検知したときに出現する全画面オーバーレイ -->
+    <!-- 「AAA通話」を検知したときに出現する超シンプル・超巨大ボタン -->
     <div id="call-overlay">
-        <h1>📞 通話の呼び出しがあります</h1>
-        <p>ボタンを押してGoogle Meetに参加してください</p>
-        <div class="call-btn-group">
-            <button id="btnJoinMeet" class="btn-meet-action" onclick="openMeet()">通話に参加する</button>
-            <button id="btnEndCall" class="btn-meet-action" onclick="endCall()">終了して掲示板に戻る</button>
-        </div>
+        <button id="btnAnswer" onclick="openMeet()">
+            <span class="phone-icon">📞</span>
+            <span>電話に出て！</span>
+        </button>
     </div>
 
     <script>
         const GAS_API_URL = "https://script.google.com/macros/s/AKfycbxQqyTJoDJB4stO6NF3uq0EKv0YrwGbwNwDHeyyUnsc6V4WM0AK3oO-oB23QmFILBjcAg/exec";
 
         let lastDataString = "";
-        let isCallingState = false;
         let currentMeetUrl = "https://meet.google.com/jma-rmrf-uhv";
 
         async function fetchMessages() {
@@ -235,17 +222,12 @@
                     currentMeetUrl = data.meetUrl;
                 }
 
-                // 2. 通話フラグの監視（LINEから「AAA通話」が来たら画面を表示）
+                // 2. 通話フラグの監視（LINEから「AAA通話」が来たら巨大ボタンを表示）
                 const callOverlay = document.getElementById('call-overlay');
                 if (data.isCalling) {
-                    isCallingState = true;
                     callOverlay.style.display = "flex";
                 } else {
-                    // フラグがオフ（終了）になったら、自動的にオーバーレイを消して掲示板状態に戻す
-                    if (isCallingState) {
-                        isCallingState = false;
-                        callOverlay.style.display = "none";
-                    }
+                    callOverlay.style.display = "none";
                 }
                 
                 const checkData = {
@@ -293,38 +275,9 @@
             }
         }
 
-        // 「通話に参加する」ボタン：アプリ起動またはブラウザでの安全な直接オープン
+        // 「電話に出て！」ボタンが押されたら、カレンダー等から取得したGoogle Meetを開く
         window.openMeet = function() {
-            const match = currentMeetUrl.match(/meet\.google\.com\/([a-z\-]+)/);
-            const meetingCode = match ? match[1] : "jma-rmrf-uhv";
-
-            // AndroidのMeetアプリを直接呼び出すインテントスキーム
-            const intentUrl = `intent://meet.google.com/${meetingCode}#Intent;package=com.google.android.apps.meetings;action=android.intent.action.VIEW;category=android.intent.category.BROWSABLE;end;`;
-            
-            try {
-                // まずMeetアプリの起動を試みる
-                window.location.href = intentUrl;
-            } catch (e) {
-                // アプリがない場合などは通常の新規ウィンドウ/タブで開く
-                window.open(currentMeetUrl, '_blank');
-            }
-        }
-
-        // 「終了して掲示板に戻る」ボタン：サーバーに通話終了を通知し、画面を元に戻す
-        window.endCall = async function() {
-            isCallingState = false;
-            document.getElementById('call-overlay').style.display = "none";
-
-            try {
-                await fetch(GAS_API_URL, {
-                    method: 'POST',
-                    body: new URLSearchParams({
-                        payload: JSON.stringify({ action: 'endCall' })
-                    })
-                });
-            } catch (error) {
-                console.error("通話終了通知エラー:", error);
-            }
+            window.location.href = currentMeetUrl;
         }
 
         // 既読・未読トグル処理
