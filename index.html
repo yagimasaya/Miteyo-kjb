@@ -129,8 +129,8 @@
         }
 
         /* ==========================================
-           通話画面（Google Meet）用のオーバーレイ層
-           ========================================== */
+            通話画面（Google Meet）用のオーバーレイ層
+            ========================================== */
         #call-overlay {
             position: fixed;
             top: 0;
@@ -138,18 +138,18 @@
             width: 100vw;
             height: 100dvh;
             background-color: #000;
-            z-index: 8888; /* 掲示板より手前、ブラックアウトより後ろ */
-            display: none; /* 初期状態は非表示 */
+            z-index: 8888;
+            display: none;
             flex-direction: column;
         }
         #meetFrame {
             width: 100%;
-            height: 75%; /* 画面上部75%にGoogle Meetを表示 */
+            height: 75%;
             border: none;
         }
         #hangup-bar {
             width: 100%;
-            height: 25%; /* 画面下1/4に終了ボタンバー */
+            height: 25%;
             background-color: #111;
             display: flex;
             justify-content: center;
@@ -160,7 +160,7 @@
         #btnHangup {
             width: 85%;
             height: 75%;
-            background-color: #D32F2F; /* 赤色の切断ボタン */
+            background-color: #D32F2F;
             color: white;
             font-size: 2.2rem;
             font-weight: bold;
@@ -202,7 +202,7 @@
         const GAS_API_URL = "https://script.google.com/macros/s/AKfycbxQqyTJoDJB4stO6NF3uq0EKv0YrwGbwNwDHeyyUnsc6V4WM0AK3oO-oB23QmFILBjcAg/exec";
         
         // 【設定】ご自身の固定Google MeetのURL
-        const FIXED_MEET_URL = "https://meet.google.com/abc-defg-hij"; // ←ここに実際の固定URLを設定してください
+        const FIXED_MEET_URL = "https://meet.google.com/abc-defg-hij";
 
         let lastDataString = "";
         let isCurrentlyInCall = false;
@@ -221,19 +221,18 @@
                     blackoutDiv.style.display = "none";
                 }
 
-                // 2. 通話開始の検知（GASから `isCalling: true` が返ってきた場合）
+                // 2. 通話開始の検知
                 const callOverlay = document.getElementById('call-overlay');
                 const meetFrame = document.getElementById('meetFrame');
 
                 if (data.isCalling) {
                     if (!isCurrentlyInCall) {
                         isCurrentlyInCall = true;
-                        meetFrame.src = FIXED_MEET_URL; // Meetを読み込む
-                        callOverlay.style.display = "flex"; // 画面に表示
+                        meetFrame.src = FIXED_MEET_URL;
+                        callOverlay.style.display = "flex";
                     }
                 } else {
                     if (isCurrentlyInCall) {
-                        // こちらから切断していなくて、サーバー側で通話終了になった場合
                         closeCallUI();
                     }
                 }
@@ -282,16 +281,15 @@
             }
         }
 
-        // 高齢者が画面下の「通話を終了する」ボタンを押したときの処理
+        // 通話終了ボタン（CORS対策：URLSearchParamsを使用）
         window.endCall = async function() {
             closeCallUI();
 
             try {
-                // GASへ「通話終了（isCallingをfalseにする）」を通知
                 await fetch(GAS_API_URL, {
                     method: 'POST',
-                    body: JSON.stringify({
-                        action: 'endCall'
+                    body: new URLSearchParams({
+                        payload: JSON.stringify({ action: 'endCall' })
                     })
                 });
             } catch (error) {
@@ -299,16 +297,16 @@
             }
         }
 
-        // 通話UIを非表示にしてリセットする内部関数
         function closeCallUI() {
             isCurrentlyInCall = false;
             const callOverlay = document.getElementById('call-overlay');
             const meetFrame = document.getElementById('meetFrame');
 
             callOverlay.style.display = "none";
-            meetFrame.src = ""; // フレームを空にしてカメラ/マイクを確実に切断
+            meetFrame.src = "";
         }
 
+        // 了解ボタン（CORS対策：URLSearchParamsを使用）
         window.toggleAcknowledge = async function(btnElement, msgId) {
             const itemElement = btnElement.closest('.message-item');
             const isCurrentlyAck = itemElement.classList.contains('acknowledged');
@@ -325,9 +323,11 @@
             try {
                 await fetch(GAS_API_URL, {
                     method: 'POST',
-                    body: JSON.stringify({
-                        action: 'toggleAcknowledge',
-                        msgId: msgId
+                    body: new URLSearchParams({
+                        payload: JSON.stringify({
+                            action: 'toggleAcknowledge',
+                            msgId: msgId
+                        })
                     })
                 });
                 fetchMessages();
@@ -337,7 +337,7 @@
         };
 
         fetchMessages();
-        setInterval(fetchMessages, 10000); // 10秒ごとにGASの状態をチェック
+        setInterval(fetchMessages, 10000);
     </script>
 </body>
 </html>
