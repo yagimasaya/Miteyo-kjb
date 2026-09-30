@@ -41,9 +41,39 @@
             font-size: 1.8rem;
             text-align: center;
             border-bottom: 2px solid #f0f4f8;
-            padding-bottom: 15px;
+            padding-bottom: 10px;
+            margin-bottom: 10px;
             flex-shrink: 0;
         }
+
+        /* 家族に電話するボタン（新規追加） */
+        .call-family-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            background-color: #06c755;
+            color: white;
+            text-decoration: none;
+            font-size: 2rem;
+            font-weight: bold;
+            padding: 18px;
+            border-radius: 20px;
+            margin-bottom: 15px;
+            box-shadow: 0 6px 15px rgba(6, 199, 85, 0.3);
+            flex-shrink: 0;
+            -webkit-tap-highlight-color: transparent;
+            transition: transform 0.1s, background-color 0.2s;
+        }
+        .call-family-btn:active {
+            transform: scale(0.98);
+            background-color: #05b34c;
+        }
+        .call-btn-icon {
+            font-size: 2.2rem;
+            line-height: 1;
+        }
+
         #message-container {
             flex-grow: 1;
             overflow-y: auto;
@@ -51,7 +81,7 @@
             flex-direction: column;
             gap: 15px;
             padding-right: 10px;
-            padding-bottom: 80px;
+            padding-bottom: 20px;
             box-sizing: border-box;
         }
         .message-item {
@@ -171,7 +201,7 @@
             line-height: 1;
         }
         
-        /* 掲示板に戻るボタン（デザイン強化版） */
+        /* 掲示板に戻るボタン */
         .emergency-close {
             position: absolute;
             bottom: 30px;
@@ -199,6 +229,14 @@
 
     <div class="card">
         <h2>伝言板</h2>
+
+        <!-- 1. お父様からの発信ボタン（追加） -->
+        <a href="intent:#Intent;action=android.intent.action.MAIN;category=android.intent.category.LAUNCHER;package=com.google.android.apps.tachyon;end" class="call-family-btn">
+            <span class="call-btn-icon">📞</span>
+            <span>家族に電話する</span>
+        </a>
+
+        <!-- 2. メッセージ一覧 -->
         <div id="message-container">
             <div class="message-item">
                 <div class="message-content">
@@ -208,13 +246,13 @@
         </div>
     </div>
 
+    <!-- 着信オーバーレイ（LINEメッセージ等で呼び出す際用） -->
     <div id="call-overlay">
         <a id="btnAnswer" href="#" target="_blank" rel="noopener noreferrer" onclick="handleAnswerClick(event)">
             <span class="phone-icon">📞</span>
             <span>電話に出て！</span>
         </a>
         
-        <!-- ボタン化された非表示ボタン -->
         <button class="emergency-close" onclick="hideOverlayLocally()">掲示板に戻る</button>
     </div>
 
