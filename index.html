@@ -13,6 +13,8 @@
             background-color: #f0f4f8;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
         }
+        
+        /* ブラックアウト制御用スクリーン */
         #blackout-screen {
             position: fixed;
             top: 0;
@@ -23,26 +25,26 @@
             z-index: 9999;
             display: none;
         }
+
         .card {
             background: white;
             padding: 20px;
             border-radius: 0;
-            box-shadow: none;
             width: 100vw;
-            max-width: 100%;
             height: 100dvh;
             display: flex;
             flex-direction: column;
             box-sizing: border-box;
         }
+
         h2 {
             margin-top: 0;
             color: #333;
-            font-size: 1.8rem;
+            font-size: 2.0rem;
             text-align: center;
-            border-bottom: 2px solid #f0f4f8;
-            padding-bottom: 10px;
-            margin-bottom: 10px;
+            border-bottom: 3px solid #06c755;
+            padding-bottom: 12px;
+            margin-bottom: 15px;
             flex-shrink: 0;
         }
 
@@ -56,52 +58,59 @@
             padding-bottom: 20px;
             box-sizing: border-box;
         }
+
         .message-item {
             background: #f7f9fc;
             padding: 20px 25px;
             border-radius: 16px;
-            border-left: 6px solid #06c755;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.03);
+            border-left: 8px solid #06c755;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
             flex-shrink: 0;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            transition: all 0.3s ease;
         }
+
         .message-content {
             flex-grow: 1;
             margin-right: 15px;
         }
+
         .message-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
             margin-bottom: 8px;
         }
+
         .sender-name {
-            font-size: 1.2rem;
+            font-size: 1.3rem;
             font-weight: bold;
             color: #06c755;
         }
+
         .message-time {
-            font-size: 1.0rem;
+            font-size: 1.1rem;
             color: #666;
         }
+
         .message-text {
-            font-size: 2.2rem;
+            font-size: 2.3rem;
             color: #333;
             word-break: break-all;
             line-height: 1.4;
             margin: 0;
+            font-weight: 500;
         }
+
         .ack-btn {
             background-color: #06c755;
             color: white;
             border: none;
-            width: 80px;
-            height: 80px;
+            width: 90px;
+            height: 90px;
             border-radius: 50%;
-            font-size: 1.2rem;
+            font-size: 1.4rem;
             font-weight: bold;
             cursor: pointer;
             box-shadow: 0 4px 10px rgba(0,0,0,0.15);
@@ -109,16 +118,18 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: background-color 0.2s;
+            -webkit-tap-highlight-color: transparent;
         }
+
         .ack-btn:active {
             transform: scale(0.95);
         }
 
+        /* 既読（了解済み）スタイル */
         .message-item.acknowledged {
             background: #e2e8f0 !important;
             border-left-color: #cbd5e1 !important;
-            opacity: 0.7;
+            opacity: 0.65;
         }
         .message-item.acknowledged .sender-name,
         .message-item.acknowledged .message-text,
@@ -129,35 +140,111 @@
             background-color: #94a3b8 !important;
             box-shadow: none;
         }
+
+        /* 着信ポップアップオーバーレイ */
+        #call-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100dvh;
+            background-color: rgba(0, 0, 0, 0.92);
+            z-index: 8888;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            box-sizing: border-box;
+        }
+
+        #btnAnswer {
+            width: 85vw;
+            max-width: 500px;
+            height: 48vh;
+            max-height: 400px;
+            background-color: #06c755;
+            color: white;
+            font-size: 3.5rem;
+            font-weight: bold;
+            border: none;
+            border-radius: 40px;
+            cursor: pointer;
+            box-shadow: 0 10px 30px rgba(6, 199, 85, 0.5);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            text-decoration: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .phone-icon {
+            font-size: 5.5rem;
+            line-height: 1;
+        }
+
+        .emergency-close {
+            position: absolute;
+            bottom: 40px;
+            font-size: 1.6rem;
+            font-weight: bold;
+            color: #ffffff;
+            background-color: #4a5568;
+            border: 2px solid #718096;
+            border-radius: 16px;
+            padding: 14px 32px;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            -webkit-tap-highlight-color: transparent;
+        }
     </style>
 </head>
 <body>
+    <!-- ブラックアウト画面 -->
     <div id="blackout-screen"></div>
 
     <div class="card">
-        <h2>伝言板</h2>
+        <h2>父への伝言板</h2>
 
-        <!-- メッセージ一覧 -->
+        <!-- メッセージ表示エリア -->
         <div id="message-container">
             <div class="message-item">
                 <div class="message-content">
-                    <p class="message-text">読み込み中...</p>
+                    <p class="message-text">データを読み込んでいます...</p>
                 </div>
             </div>
         </div>
     </div>
 
+    <!-- 通話着信ポップアップ -->
+    <div id="call-overlay">
+        <a id="btnAnswer" href="#" onclick="handleAnswerClick(event)">
+            <span class="phone-icon">📞</span>
+            <span>電話に出て！</span>
+        </a>
+        <button class="emergency-close" onclick="hideOverlayLocally()">掲示板に戻る</button>
+    </div>
+
     <script>
-        const GAS_API_URL = "https://script.google.com/macros/s/AKfycbxQqyTJoDJB4stO6NF3uq0EKv0YrwGbwNwDHeyyUnsc6V4WM0AK3oO-oB23QmFILBjcAg/exec";
+        // ★ご自身のGASウェブアプリのURLを入力してください
+        const GAS_API_URL = "https://script.google.com/macros/s/YOUR_EXEC_ID/exec";
+
+        // ★発信先のご家族のGoogleアカウント（メールアドレス）を設定してください
+        const FAMILY_EMAIL = "your-family-email@gmail.com"; 
+
+        // Google Meet 通話機能（旧Duo）呼び出し用 Intent URL
+        const MEET_CALL_URL = `intent://meet.google.com/call/${FAMILY_EMAIL}#Intent;scheme=https;package=com.google.android.apps.tachyon;end;`;
 
         let lastDataString = "";
+        let localHideCall = false;
 
         async function fetchMessages() {
             try {
                 const response = await fetch(GAS_API_URL);
                 const data = await response.json();
-                
-                // 1. ブラックアウト制御
+
+                // 1. ブラックアウト処理
                 const blackoutDiv = document.getElementById('blackout-screen');
                 if (data.isBlackout) {
                     blackoutDiv.style.display = "block";
@@ -166,11 +253,26 @@
                     blackoutDiv.style.display = "none";
                 }
 
-                // 2. メッセージ描画処理
+                // 2. 通話着信オーバーレイの制御
+                const callOverlay = document.getElementById('call-overlay');
+                const btnAnswer = document.getElementById('btnAnswer');
+
+                if (data.isCalling) {
+                    if (!localHideCall) {
+                        callOverlay.style.display = "flex";
+                        btnAnswer.href = MEET_CALL_URL;
+                    }
+                } else {
+                    callOverlay.style.display = "none";
+                    localHideCall = false; // フラグがOFFに戻ったらローカル非表示をリセット
+                }
+
+                // 3. メッセージデータの描画更新
                 const messages = data.messages || [];
                 const checkData = {
                     messages: messages,
-                    acknowledgedIds: data.acknowledgedIds
+                    acknowledgedIds: data.acknowledgedIds,
+                    isCalling: data.isCalling
                 };
                 const dataString = JSON.stringify(checkData);
 
@@ -179,7 +281,7 @@
                     
                     const container = document.getElementById('message-container');
                     container.innerHTML = "";
-                    
+
                     const ackIds = data.acknowledgedIds || [];
 
                     messages.forEach((msg) => {
@@ -188,7 +290,7 @@
 
                         const div = document.createElement('div');
                         div.className = `message-item ${isAck ? 'acknowledged' : ''}`;
-                        
+
                         div.innerHTML = `
                             <div class="message-content">
                                 <div class="message-header">
@@ -203,17 +305,33 @@
                         `;
                         container.appendChild(div);
                     });
-                    
+
+                    // 最下部まで自動スクロール
                     container.scrollTop = container.scrollHeight;
                 }
+
             } catch (error) {
-                console.error("取得エラー:", error);
+                console.error("データ取得エラー:", error);
             }
         }
 
-        window.toggleAcknowledge = async function(btnElement, msgId) {
+        function handleAnswerClick(event) {
+            localHideCall = true;
+            setTimeout(() => {
+                document.getElementById('call-overlay').style.display = 'none';
+            }, 300);
+        }
+
+        function hideOverlayLocally() {
+            localHideCall = true;
+            document.getElementById('call-overlay').style.display = 'none';
+        }
+
+        async function toggleAcknowledge(btnElement, msgId) {
             const itemElement = btnElement.closest('.message-item');
             const isCurrentlyAck = itemElement.classList.contains('acknowledged');
+
+            // UIを即時反映
             if (isCurrentlyAck) {
                 itemElement.classList.remove('acknowledged');
                 btnElement.classList.remove('acknowledged');
@@ -236,10 +354,11 @@
                 });
                 fetchMessages();
             } catch (error) {
-                console.error("送信エラー:", error);
+                console.error("了解状態更新エラー:", error);
             }
-        };
+        }
 
+        // 初回実行と10秒周期の定期通信
         fetchMessages();
         setInterval(fetchMessages, 10000);
     </script>
