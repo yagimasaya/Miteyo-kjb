@@ -129,71 +129,6 @@
             background-color: #94a3b8 !important;
             box-shadow: none;
         }
-
-        /* オーバーレイ関連 */
-        #call-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100dvh;
-            background-color: rgba(0, 0, 0, 0.9);
-            z-index: 8888;
-            display: none;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            box-sizing: border-box;
-        }
-        
-        #btnAnswer {
-            width: 85vw;
-            max-width: 500px;
-            height: 50vh;
-            max-height: 400px;
-            background-color: #06c755;
-            color: white;
-            font-size: 3.5rem;
-            font-weight: bold;
-            border: none;
-            border-radius: 40px;
-            cursor: pointer;
-            box-shadow: 0 10px 30px rgba(6, 199, 85, 0.5);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 20px;
-            text-decoration: none;
-            -webkit-tap-highlight-color: transparent;
-        }
-
-        .phone-icon {
-            font-size: 5rem;
-            line-height: 1;
-        }
-        
-        /* 掲示板に戻るボタン */
-        .emergency-close {
-            position: absolute;
-            bottom: 30px;
-            font-size: 1.6rem;
-            font-weight: bold;
-            color: #ffffff;
-            background-color: #4a5568;
-            border: 2px solid #718096;
-            border-radius: 16px;
-            padding: 14px 28px;
-            cursor: pointer;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-            text-decoration: none;
-            transition: all 0.15s ease;
-            -webkit-tap-highlight-color: transparent;
-        }
-        .emergency-close:active {
-            transform: scale(0.95);
-            background-color: #2d3748;
-        }
     </style>
 </head>
 <body>
@@ -212,22 +147,10 @@
         </div>
     </div>
 
-    <!-- 着信オーバーレイ（LINEメッセージ等で呼び出す際用） -->
-    <div id="call-overlay">
-        <a id="btnAnswer" href="#" target="_blank" rel="noopener noreferrer" onclick="handleAnswerClick(event)">
-            <span class="phone-icon">📞</span>
-            <span>電話に出て！</span>
-        </a>
-        
-        <button class="emergency-close" onclick="hideOverlayLocally()">掲示板に戻る</button>
-    </div>
-
     <script>
         const GAS_API_URL = "https://script.google.com/macros/s/AKfycbxQqyTJoDJB4stO6NF3uq0EKv0YrwGbwNwDHeyyUnsc6V4WM0AK3oO-oB23QmFILBjcAg/exec";
 
         let lastDataString = "";
-        let lastMeetUrl = "";
-        let localHideCall = false;
 
         async function fetchMessages() {
             try {
@@ -243,36 +166,11 @@
                     blackoutDiv.style.display = "none";
                 }
 
-                // 2. 通話フラグの監視
-                const callOverlay = document.getElementById('call-overlay');
-                const btnAnswer = document.getElementById('btnAnswer');
-
-                if (data.isCalling) {
-                    const currentUrl = data.meetUrl || "https://meet.google.com/jma-rmrf-uhv";
-                    
-                    if (currentUrl !== lastMeetUrl) {
-                        lastMeetUrl = currentUrl;
-                        localHideCall = false;
-                    }
-
-                    if (!localHideCall) {
-                        callOverlay.style.display = "flex";
-                        btnAnswer.href = currentUrl;
-                    } else {
-                        callOverlay.style.display = "none";
-                    }
-                } else {
-                    callOverlay.style.display = "none";
-                    localHideCall = false;
-                }
-                
-                // 3. メッセージ描画処理
+                // 2. メッセージ描画処理
                 const messages = data.messages || [];
                 const checkData = {
                     messages: messages,
-                    acknowledgedIds: data.acknowledgedIds,
-                    isCalling: data.isCalling,
-                    meetUrl: data.meetUrl
+                    acknowledgedIds: data.acknowledgedIds
                 };
                 const dataString = JSON.stringify(checkData);
 
@@ -311,18 +209,6 @@
             } catch (error) {
                 console.error("取得エラー:", error);
             }
-        }
-
-        function handleAnswerClick(event) {
-            localHideCall = true;
-            setTimeout(() => {
-                document.getElementById('call-overlay').style.display = 'none';
-            }, 300);
-        }
-
-        window.hideOverlayLocally = function() {
-            localHideCall = true;
-            document.getElementById('call-overlay').style.display = 'none';
         }
 
         window.toggleAcknowledge = async function(btnElement, msgId) {
