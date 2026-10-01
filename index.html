@@ -43,9 +43,34 @@
             font-size: 2.0rem;
             text-align: center;
             border-bottom: 3px solid #06c755;
-            padding-bottom: 12px;
-            margin-bottom: 15px;
+            padding-bottom: 10px;
+            margin-bottom: 10px;
             flex-shrink: 0;
+        }
+
+        /* ★新機能：「ビデオ通話して」ボタンのスタイル */
+        .call-request-btn {
+            background-color: #e53e3e;
+            color: white;
+            font-size: 1.8rem;
+            font-weight: bold;
+            border: none;
+            border-radius: 16px;
+            padding: 14px 20px;
+            margin-bottom: 15px;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(229, 62, 62, 0.35);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            flex-shrink: 0;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .call-request-btn:active {
+            transform: scale(0.97);
+            background-color: #c53030;
         }
 
         #message-container {
@@ -149,6 +174,12 @@
     <div class="card">
         <h2>父への伝言板</h2>
 
+        <!-- ★画面上部：「ビデオ通話して」ボタン -->
+        <button class="call-request-btn" onclick="sendVideoCallRequest(this)">
+            <span>📹</span>
+            <span>ビデオ通話して</span>
+        </button>
+
         <!-- メッセージ一覧 -->
         <div id="message-container">
             <div class="message-item">
@@ -224,6 +255,39 @@
 
             } catch (error) {
                 console.error("データ取得エラー:", error);
+            }
+        }
+
+        // ★「ビデオ通話して」ボタン送信処理
+        async function sendVideoCallRequest(btnElement) {
+            btnElement.disabled = true;
+            btnElement.style.opacity = "0.6";
+
+            try {
+                await fetch(GAS_API_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: {
+                        'Content-Type': 'text/plain'
+                    },
+                    body: JSON.stringify({
+                        action: 'addMessage',
+                        name: '政一',
+                        text: '政一がビデオ通話を求めている'
+                    })
+                });
+
+                // 即座に最新メッセージを取得して更新
+                setTimeout(() => {
+                    fetchMessages();
+                    btnElement.disabled = false;
+                    btnElement.style.opacity = "1";
+                }, 800);
+
+            } catch (error) {
+                console.error("ビデオ通話要求の送信エラー:", error);
+                btnElement.disabled = false;
+                btnElement.style.opacity = "1";
             }
         }
 
