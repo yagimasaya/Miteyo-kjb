@@ -13,8 +13,8 @@
             background-color: #f0f4f8;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
         }
-        
-        /* ブラックアウト制御用スクリーン */
+
+        /* 消灯（ブラックアウト）画面 */
         #blackout-screen {
             position: fixed;
             top: 0;
@@ -125,7 +125,7 @@
             transform: scale(0.95);
         }
 
-        /* 既読（了解済み）スタイル */
+        /* 了解済み（既読）スタイル */
         .message-item.acknowledged {
             background: #e2e8f0 !important;
             border-left-color: #cbd5e1 !important;
@@ -141,7 +141,7 @@
             box-shadow: none;
         }
 
-        /* 着信ポップアップオーバーレイ */
+        /* ★通話着信ポップアップ（全画面表示） */
         #call-overlay {
             position: fixed;
             top: 0;
@@ -207,7 +207,7 @@
     <div class="card">
         <h2>父への伝言板</h2>
 
-        <!-- メッセージ表示エリア -->
+        <!-- メッセージ一覧 -->
         <div id="message-container">
             <div class="message-item">
                 <div class="message-content">
@@ -227,13 +227,12 @@
     </div>
 
     <script>
-        // ★ご自身のGASウェブアプリのURLを入力してください
         const GAS_API_URL = "https://script.google.com/macros/s/AKfycbxQqyTJoDJB4stO6NF3uq0EKv0YrwGbwNwDHeyyUnsc6V4WM0AK3oO-oB23QmFILBjcAg/exec";
 
-        // ★発信先のご家族のGoogleアカウント（メールアドレス）を設定してください
-        const FAMILY_EMAIL = "your-family-email@gmail.com"; 
+        // ★通話を受け取るご家族のGoogleアカウント（メールアドレス）を設定してください
+        const FAMILY_EMAIL = "your-family-email@gmail.com";
 
-        // Google Meet 通話機能（旧Duo）呼び出し用 Intent URL
+        // Google Meet 通話機能（旧Duo）発信用 Intent URL
         const MEET_CALL_URL = `intent://meet.google.com/call/${FAMILY_EMAIL}#Intent;scheme=https;package=com.google.android.apps.tachyon;end;`;
 
         let lastDataString = "";
@@ -244,7 +243,7 @@
                 const response = await fetch(GAS_API_URL);
                 const data = await response.json();
 
-                // 1. ブラックアウト処理
+                // 1. 消灯（ブラックアウト）制御
                 const blackoutDiv = document.getElementById('blackout-screen');
                 if (data.isBlackout) {
                     blackoutDiv.style.display = "block";
@@ -253,7 +252,7 @@
                     blackoutDiv.style.display = "none";
                 }
 
-                // 2. 通話着信オーバーレイの制御
+                // 2. 通話着信（AAA通話）制御
                 const callOverlay = document.getElementById('call-overlay');
                 const btnAnswer = document.getElementById('btnAnswer');
 
@@ -267,7 +266,7 @@
                     localHideCall = false; // フラグがOFFに戻ったらローカル非表示をリセット
                 }
 
-                // 3. メッセージデータの描画更新
+                // 3. メッセージ描画
                 const messages = data.messages || [];
                 const checkData = {
                     messages: messages,
@@ -306,7 +305,6 @@
                         container.appendChild(div);
                     });
 
-                    // 最下部まで自動スクロール
                     container.scrollTop = container.scrollHeight;
                 }
 
@@ -331,7 +329,6 @@
             const itemElement = btnElement.closest('.message-item');
             const isCurrentlyAck = itemElement.classList.contains('acknowledged');
 
-            // UIを即時反映
             if (isCurrentlyAck) {
                 itemElement.classList.remove('acknowledged');
                 btnElement.classList.remove('acknowledged');
@@ -345,20 +342,17 @@
             try {
                 await fetch(GAS_API_URL, {
                     method: 'POST',
-                    body: new URLSearchParams({
-                        payload: JSON.stringify({
-                            action: 'toggleAcknowledge',
-                            msgId: msgId
-                        })
+                    body: JSON.stringify({
+                        action: 'toggleAcknowledge',
+                        msgId: msgId
                     })
                 });
                 fetchMessages();
             } catch (error) {
-                console.error("了解状態更新エラー:", error);
+                console.error("了解トグル送信エラー:", error);
             }
         }
 
-        // 初回実行と10秒周期の定期通信
         fetchMessages();
         setInterval(fetchMessages, 10000);
     </script>
