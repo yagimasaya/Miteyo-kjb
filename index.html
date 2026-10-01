@@ -141,7 +141,7 @@
             box-shadow: none;
         }
 
-        /* ★通話着信ポップアップ（全画面表示） */
+        /* 通話着信ポップアップ（全画面表示） */
         #call-overlay {
             position: fixed;
             top: 0;
@@ -229,14 +229,14 @@
     <script>
         const GAS_API_URL = "https://script.google.com/macros/s/AKfycbxQqyTJoDJB4stO6NF3uq0EKv0YrwGbwNwDHeyyUnsc6V4WM0AK3oO-oB23QmFILBjcAg/exec";
 
-        // ★通話を受け取るご家族のGoogleアカウント（メールアドレス）を設定してください
         const FAMILY_EMAIL = "your-family-email@gmail.com";
-
-        // Google Meet 通話機能（旧Duo）発信用 Intent URL
         const MEET_CALL_URL = `intent://meet.google.com/call/${FAMILY_EMAIL}#Intent;scheme=https;package=com.google.android.apps.tachyon;end;`;
 
         let lastDataString = "";
         let localHideCall = false;
+
+        // 通信遅延対策用：ローカルで保持する「済み」IDリスト
+        let localAckIds = new Set();
 
         async function fetchMessages() {
             try {
@@ -263,14 +263,19 @@
                     }
                 } else {
                     callOverlay.style.display = "none";
-                    localHideCall = false; // フラグがOFFに戻ったらローカル非表示をリセット
+                    localHideCall = false;
                 }
 
                 // 3. メッセージ描画
                 const messages = data.messages || [];
+                const ackIdsFromGAS = data.acknowledgedIds || [];
+
+                // GASからの「済み」リストをローカル保持Setにマージ
+                ackIdsFromGAS.forEach(id => localAckIds.add(id));
+
                 const checkData = {
                     messages: messages,
-                    acknowledgedIds: data.acknowledgedIds,
+                    acknowledgedIds: Array.from(localAckIds),
                     isCalling: data.isCalling
                 };
                 const dataString = JSON.stringify(checkData);
@@ -281,11 +286,10 @@
                     const container = document.getElementById('message-container');
                     container.innerHTML = "";
 
-                    const ackIds = data.acknowledgedIds || [];
-
                     messages.forEach((msg) => {
                         const msgId = `${msg.name}_${msg.time}_${msg.text}`;
-                        const isAck = ackIds.includes(msgId);
+                        // GASの記録またはローカル保持のどちらかにあれば「済み」にする
+                        const isAck = localAckIds.has(msgId);
 
                         const div = document.createElement('div');
                         div.className = `message-item ${isAck ? 'acknowledged' : ''}`;
@@ -329,25 +333,32 @@
             const itemElement = btnElement.closest('.message-item');
             const isCurrentlyAck = itemElement.classList.contains('acknowledged');
 
+            // 1. 画面上の見た目を即座に切り替え＆ローカル保持の更新
             if (isCurrentlyAck) {
                 itemElement.classList.remove('acknowledged');
                 btnElement.classList.remove('acknowledged');
                 btnElement.textContent = '了解';
+                localAckIds.delete(msgId);
             } else {
                 itemElement.classList.add('acknowledged');
                 btnElement.classList.add('acknowledged');
                 btnElement.textContent = '済み';
+                localAckIds.add(msgId);
             }
 
+            // 2. GASへデータを確実に送信 (mode: 'no-cors' でCORSエラーを回避)
             try {
                 await fetch(GAS_API_URL, {
                     method: 'POST',
+                    mode: 'no-cors',
+                    headers: {
+                        'Content-Type': 'text/plain'
+                    },
                     body: JSON.stringify({
                         action: 'toggleAcknowledge',
                         msgId: msgId
                     })
                 });
-                fetchMessages();
             } catch (error) {
                 console.error("了解トグル送信エラー:", error);
             }
