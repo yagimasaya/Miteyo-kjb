@@ -140,68 +140,10 @@
             background-color: #94a3b8 !important;
             box-shadow: none;
         }
-
-        /* 通話着信ポップアップ（全画面表示） */
-        #call-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100dvh;
-            background-color: rgba(0, 0, 0, 0.92);
-            z-index: 8888;
-            display: none;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            box-sizing: border-box;
-        }
-
-        #btnAnswer {
-            width: 85vw;
-            max-width: 500px;
-            height: 48vh;
-            max-height: 400px;
-            background-color: #06c755;
-            color: white;
-            font-size: 3.5rem;
-            font-weight: bold;
-            border: none;
-            border-radius: 40px;
-            cursor: pointer;
-            box-shadow: 0 10px 30px rgba(6, 199, 85, 0.5);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 20px;
-            text-decoration: none;
-            -webkit-tap-highlight-color: transparent;
-        }
-
-        .phone-icon {
-            font-size: 5.5rem;
-            line-height: 1;
-        }
-
-        .emergency-close {
-            position: absolute;
-            bottom: 40px;
-            font-size: 1.6rem;
-            font-weight: bold;
-            color: #ffffff;
-            background-color: #4a5568;
-            border: 2px solid #718096;
-            border-radius: 16px;
-            padding: 14px 32px;
-            cursor: pointer;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-            -webkit-tap-highlight-color: transparent;
-        }
     </style>
 </head>
 <body>
-    <!-- ブラックアウト画面 -->
+    <!-- 消灯（ブラックアウト）画面 -->
     <div id="blackout-screen"></div>
 
     <div class="card">
@@ -217,25 +159,10 @@
         </div>
     </div>
 
-    <!-- 通話着信ポップアップ -->
-    <div id="call-overlay">
-        <a id="btnAnswer" href="#" onclick="handleAnswerClick(event)">
-            <span class="phone-icon">📞</span>
-            <span>電話に出て！</span>
-        </a>
-        <button class="emergency-close" onclick="hideOverlayLocally()">掲示板に戻る</button>
-    </div>
-
     <script>
         const GAS_API_URL = "https://script.google.com/macros/s/AKfycbxQqyTJoDJB4stO6NF3uq0EKv0YrwGbwNwDHeyyUnsc6V4WM0AK3oO-oB23QmFILBjcAg/exec";
 
-        const FAMILY_EMAIL = "your-family-email@gmail.com";
-        const MEET_CALL_URL = `intent://meet.google.com/call/${FAMILY_EMAIL}#Intent;scheme=https;package=com.google.android.apps.tachyon;end;`;
-
         let lastDataString = "";
-        let localHideCall = false;
-
-        // 通信遅延対策用：ローカルで保持する「済み」IDリスト
         let localAckIds = new Set();
 
         async function fetchMessages() {
@@ -252,31 +179,15 @@
                     blackoutDiv.style.display = "none";
                 }
 
-                // 2. 通話着信（AAA通話）制御
-                const callOverlay = document.getElementById('call-overlay');
-                const btnAnswer = document.getElementById('btnAnswer');
-
-                if (data.isCalling) {
-                    if (!localHideCall) {
-                        callOverlay.style.display = "flex";
-                        btnAnswer.href = MEET_CALL_URL;
-                    }
-                } else {
-                    callOverlay.style.display = "none";
-                    localHideCall = false;
-                }
-
-                // 3. メッセージ描画
+                // 2. メッセージ描画
                 const messages = data.messages || [];
                 const ackIdsFromGAS = data.acknowledgedIds || [];
 
-                // GASからの「済み」リストをローカル保持Setにマージ
                 ackIdsFromGAS.forEach(id => localAckIds.add(id));
 
                 const checkData = {
                     messages: messages,
-                    acknowledgedIds: Array.from(localAckIds),
-                    isCalling: data.isCalling
+                    acknowledgedIds: Array.from(localAckIds)
                 };
                 const dataString = JSON.stringify(checkData);
 
@@ -288,7 +199,6 @@
 
                     messages.forEach((msg) => {
                         const msgId = `${msg.name}_${msg.time}_${msg.text}`;
-                        // GASの記録またはローカル保持のどちらかにあれば「済み」にする
                         const isAck = localAckIds.has(msgId);
 
                         const div = document.createElement('div');
@@ -317,23 +227,10 @@
             }
         }
 
-        function handleAnswerClick(event) {
-            localHideCall = true;
-            setTimeout(() => {
-                document.getElementById('call-overlay').style.display = 'none';
-            }, 300);
-        }
-
-        function hideOverlayLocally() {
-            localHideCall = true;
-            document.getElementById('call-overlay').style.display = 'none';
-        }
-
         async function toggleAcknowledge(btnElement, msgId) {
             const itemElement = btnElement.closest('.message-item');
             const isCurrentlyAck = itemElement.classList.contains('acknowledged');
 
-            // 1. 画面上の見た目を即座に切り替え＆ローカル保持の更新
             if (isCurrentlyAck) {
                 itemElement.classList.remove('acknowledged');
                 btnElement.classList.remove('acknowledged');
@@ -346,7 +243,6 @@
                 localAckIds.add(msgId);
             }
 
-            // 2. GASへデータを確実に送信 (mode: 'no-cors' でCORSエラーを回避)
             try {
                 await fetch(GAS_API_URL, {
                     method: 'POST',
