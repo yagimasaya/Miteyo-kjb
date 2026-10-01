@@ -48,7 +48,7 @@
             flex-shrink: 0;
         }
 
-        /* ★新機能：「ビデオ通話して」ボタンのスタイル */
+        /* 「ビデオ通話して」ボタンのスタイル */
         .call-request-btn {
             background-color: #e53e3e;
             color: white;
@@ -150,7 +150,24 @@
             transform: scale(0.95);
         }
 
-        /* 了解済み（既読）スタイル */
+        /* ★ビデオ通話要求メッセージ専用の赤色強調スタイル */
+        .message-item.call-request-msg {
+            background-color: #fff5f5 !important;
+            border-left-color: #e53e3e !important;
+        }
+        .message-item.call-request-msg .sender-name {
+            color: #e53e3e !important;
+        }
+        .message-item.call-request-msg .message-text {
+            color: #c53030 !important;
+            font-weight: bold;
+        }
+        .message-item.call-request-msg .ack-btn {
+            background-color: #e53e3e !important;
+            box-shadow: 0 4px 10px rgba(229, 62, 62, 0.25);
+        }
+
+        /* 了解済み（既読）スタイル（赤色メッセージもグレーダウン） */
         .message-item.acknowledged {
             background: #e2e8f0 !important;
             border-left-color: #cbd5e1 !important;
@@ -174,10 +191,10 @@
     <div class="card">
         <h2>父への伝言板</h2>
 
-        <!-- ★画面上部：「ビデオ通話して」ボタン -->
+        <!-- 「ビデオ通話して」ボタン -->
         <button class="call-request-btn" onclick="sendVideoCallRequest(this)">
             <span>📹</span>
-            <span>ビデオ通話して</span>
+            <span>ビデオ通話求む　　政一より</span>
         </button>
 
         <!-- メッセージ一覧 -->
@@ -231,9 +248,12 @@
                     messages.forEach((msg) => {
                         const msgId = `${msg.name}_${msg.time}_${msg.text}`;
                         const isAck = localAckIds.has(msgId);
+                        
+                        // ★「ビデオ通話」が含まれるテキストの場合は赤色用クラスを付与
+                        const isCallReq = msg.text && msg.text.includes("ビデオ通話");
 
                         const div = document.createElement('div');
-                        div.className = `message-item ${isAck ? 'acknowledged' : ''}`;
+                        div.className = `message-item ${isAck ? 'acknowledged' : ''} ${isCallReq ? 'call-request-msg' : ''}`;
 
                         div.innerHTML = `
                             <div class="message-content">
@@ -258,7 +278,6 @@
             }
         }
 
-        // ★「ビデオ通話して」ボタン送信処理
         async function sendVideoCallRequest(btnElement) {
             btnElement.disabled = true;
             btnElement.style.opacity = "0.6";
@@ -277,7 +296,6 @@
                     })
                 });
 
-                // 即座に最新メッセージを取得して更新
                 setTimeout(() => {
                     fetchMessages();
                     btnElement.disabled = false;
