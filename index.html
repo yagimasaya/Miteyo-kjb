@@ -91,7 +91,7 @@
             word-break: break-all;
             line-height: 1.4;
             margin: 0;
-            white-space: pre-wrap; /* 改行を画面に正しく反映 */
+            white-space: pre-wrap;
         }
         .ack-btn {
             background-color: #06c755;
@@ -224,25 +224,23 @@
         let lastMeetUrl = "";
         let localHideCall = false;
 
-        // エスケープ処理（HTML特殊文字の変換）
-        function escapeHtml(str) {
-            if (!str) return '';
-            return String(str)
-                .replace(/&/g, '&amp;')
-                .replace(/</g, '&lt;')
-                .replace(/>/g, '&gt;')
-                .replace(/"/g, '&quot;')
-                .replace(/'/g, '&#039;');
-        }
-
         async function fetchMessages() {
             try {
                 const response = await fetch(GAS_API_URL);
                 const data = await response.json();
                 
-                // 1. ブラックアウト制御
+                // 1. 時間による自動ブラックアウト判定（夜0:05 〜 朝5:00）
+                const now = new Date();
+                const hours = now.getHours();
+                const minutes = now.getMinutes();
+
+                // 0:05 〜 4:59 の間かを判定
+                const isNightBlackout = (hours === 0 && minutes >= 5) || (hours >= 1 && hours < 5);
+
                 const blackoutDiv = document.getElementById('blackout-screen');
-                if (data.isBlackout) {
+
+                // GAS側の手動ブラックアウト、または夜間タイマーのいずれかが該当すれば画面を真っ黒にする
+                if (data.isBlackout || isNightBlackout) {
                     blackoutDiv.style.display = "block";
                     return;
                 } else {
@@ -297,7 +295,6 @@
                         const div = document.createElement('div');
                         div.className = `message-item ${isAck ? 'acknowledged' : ''}`;
                         
-                        // HTML要素を手動作成して安全に値をセットする
                         const contentDiv = document.createElement('div');
                         contentDiv.className = 'message-content';
 
@@ -325,7 +322,6 @@
                         const btn = document.createElement('button');
                         btn.className = `ack-btn ${isAck ? 'acknowledged' : ''}`;
                         btn.textContent = isAck ? '済み' : '了解';
-                        // msgIdをdataset属性に持たせることで構文エラーを防止
                         btn.dataset.msgId = msgId;
                         btn.onclick = function() {
                             toggleAcknowledge(this);
