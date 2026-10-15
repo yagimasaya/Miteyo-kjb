@@ -282,16 +282,19 @@
             updateBlackoutDisplay();
         };
 
-        // 画面の消灯状態とボタンの切り替えを行う関数
+        // 画面の消灯状態とボタンの切り替えを行う関数（PM11:00〜AM6:00自動消灯・堅牢化版）
         function updateBlackoutDisplay() {
             const blackoutDiv = document.getElementById('blackout-screen');
             const btnBlackout = document.getElementById('btnHeaderBlackout');
             const btnRestore = document.getElementById('btnHeaderRestore');
             
+            if (!blackoutDiv || !btnBlackout || !btnRestore) return;
+
             const now = new Date();
             const hours = now.getHours();
-            const minutes = now.getMinutes();
-            const isNightBlackout = (hours === 0 && minutes >= 5) || (hours >= 1 && hours < 5);
+            
+            // PM11:00 (23:00) 〜 翌朝 AM6:00 (6:00未満) の間は自動消灯
+            const isNightBlackout = (hours >= 23 || hours < 6);
 
             if (manualBlackout || window.serverIsBlackout || isNightBlackout) {
                 blackoutDiv.style.display = "block";
@@ -307,6 +310,8 @@
         async function fetchMessages() {
             try {
                 const response = await fetch(GAS_API_URL);
+                if (!response.ok) throw new Error("ネットワーク応答エラー");
+                
                 const data = await response.json();
 
                 window.serverIsBlackout = data.isBlackout || false;
@@ -327,10 +332,12 @@
                     lastDataString = dataString;
                     
                     const container = document.getElementById('message-container');
+                    if (!container) return;
+                    
                     container.innerHTML = "";
 
                     messages.forEach((msg) => {
-                        const msgId = `${msg.name}_${msg.time}_${msg.text}`;
+                        const msgId = `${msg.name || ''}_${msg.time || ''}_${msg.text || ''}`;
                         const isAck = localAckIds.has(msgId);
                         
                         const isCallReq = msg.text && msg.text.includes("ビデオ通話");
@@ -448,10 +455,10 @@
             }
         }
 
+        // 初期化実行
         updateBlackoutDisplay();
         fetchMessages();
         setInterval(fetchMessages, 10000);
     </script>
 </body>
 </html>
-
