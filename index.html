@@ -1,3 +1,6 @@
+普段の掲示板画面（「伝言板」タイトルの右隣など）に、いつでも押せる常時表示の「消」ボタンを配置した最新のコードを作成しました。
+これによって、通話中かどうかに関係なく、いつでも手動で画面を真っ黒（AAA消灯）にできるようになります。
+修正済みの完全版コード (index.html)
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -35,21 +38,52 @@
             flex-direction: column;
             box-sizing: border-box;
         }
+        
+        /* ヘッダー部分（タイトルと常時表示の消灯ボタンを配置） */
+        .header-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #f0f4f8;
+            padding-bottom: 15px;
+            margin-bottom: 0;
+            flex-shrink: 0;
+        }
         h2 {
-            margin-top: 0;
+            margin: 0;
             color: #333;
             font-size: 1.8rem;
             text-align: center;
-            border-bottom: 2px solid #f0f4f8;
-            padding-bottom: 15px;
+            flex-grow: 1;
+        }
+        
+        /* 常時表示の「消」ボタン（青色・ヘッダー内） */
+        #btnHeaderBlackout {
+            background-color: #3182ce;
+            color: white;
+            font-size: 1.2rem;
+            font-weight: bold;
+            border: none;
+            border-radius: 12px;
+            padding: 10px 20px;
+            cursor: pointer;
+            box-shadow: 0 2px 6px rgba(49, 130, 206, 0.4);
+            -webkit-tap-highlight-color: transparent;
+            transition: background-color 0.2s;
             flex-shrink: 0;
         }
+        #btnHeaderBlackout:active {
+            transform: scale(0.95);
+            background-color: #2b6cb0;
+        }
+
         #message-container {
             flex-grow: 1;
             overflow-y: auto;
             display: flex;
             flex-direction: column;
             gap: 15px;
+            padding-top: 15px;
             padding-right: 10px;
             padding-bottom: 80px;
             box-sizing: border-box;
@@ -129,7 +163,7 @@
             box-shadow: none;
         }
 
-        /* オーバーレイ関連 */
+        /* オーバーレイ関連（通話着信時用） */
         #call-overlay {
             position: fixed;
             top: 0;
@@ -144,26 +178,16 @@
             align-items: center;
             box-sizing: border-box;
         }
-
-        /* ボタンを横並びにするコンテナ */
-        .overlay-buttons {
-            display: flex;
-            flex-direction: row;
-            align-items: center;
-            justify-content: center;
-            gap: 20px;
-            flex-wrap: wrap;
-        }
         
         /* 通話ボタン（緑） */
         #btnAnswer {
-            width: 45vw;
-            max-width: 350px;
-            height: 40vh;
-            max-height: 350px;
+            width: 85vw;
+            max-width: 500px;
+            height: 50vh;
+            max-height: 400px;
             background-color: #06c755;
             color: white;
-            font-size: 3rem;
+            font-size: 3.5rem;
             font-weight: bold;
             border: none;
             border-radius: 40px;
@@ -173,39 +197,13 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            gap: 15px;
+            gap: 20px;
             text-decoration: none;
             -webkit-tap-highlight-color: transparent;
         }
 
-        /* 左側に配置する消灯ボタン（青） */
-        #btnBlackoutToggle {
-            width: 45vw;
-            max-width: 350px;
-            height: 40vh;
-            max-height: 350px;
-            background-color: #3182ce;
-            color: white;
-            font-size: 3.5rem;
-            font-weight: bold;
-            border: none;
-            border-radius: 40px;
-            cursor: pointer;
-            box-shadow: 0 10px 30px rgba(49, 130, 206, 0.5);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 15px;
-            -webkit-tap-highlight-color: transparent;
-            transition: background-color 0.2s;
-        }
-        #btnBlackoutToggle:active {
-            transform: scale(0.95);
-        }
-
-        .phone-icon, .blackout-icon {
-            font-size: 4.5rem;
+        .phone-icon {
+            font-size: 5rem;
             line-height: 1;
         }
         
@@ -235,7 +233,12 @@
     <div id="blackout-screen"></div>
 
     <div class="card">
-        <h2>伝言板</h2>
+        <!-- ヘッダー（タイトルと常時表示の「消」ボタン） -->
+        <div class="header-container">
+            <h2>伝言板</h2>
+            <button id="btnHeaderBlackout" onclick="toggleManualBlackout()">消</button>
+        </div>
+
         <div id="message-container">
             <div class="message-item">
                 <div class="message-content">
@@ -245,21 +248,12 @@
         </div>
     </div>
 
-    <!-- オーバーレイ（通話ボタンと消灯ボタンを横並び） -->
+    <!-- 電話に出てねオーバーレイ（通話着信時） -->
     <div id="call-overlay">
-        <div class="overlay-buttons">
-            <!-- 左側の青いボタン：消灯（テキストを「消」のみに変更） -->
-            <button id="btnBlackoutToggle" onclick="toggleManualBlackout()">
-                <span class="blackout-icon">🌙</span>
-                <span>消</span>
-            </button>
-
-            <!-- 右側の緑のボタン：通話ボタン -->
-            <a id="btnAnswer" href="#" target="_blank" rel="noopener noreferrer" onclick="handleAnswerClick(event)">
-                <span class="phone-icon">📞</span>
-                <span>電話に出て！</span>
-            </a>
-        </div>
+        <a id="btnAnswer" href="#" target="_blank" rel="noopener noreferrer" onclick="handleAnswerClick(event)">
+            <span class="phone-icon">📞</span>
+            <span>電話に出て！</span>
+        </a>
         
         <button class="emergency-close" onclick="hideOverlayLocally()">掲示板に戻る</button>
     </div>
@@ -272,6 +266,7 @@
         let localHideCall = false;
         let manualBlackout = false;
 
+        // 手動でAAA消灯を切り替える関数
         window.toggleManualBlackout = function() {
             manualBlackout = !manualBlackout;
             const blackoutDiv = document.getElementById('blackout-screen');
@@ -310,7 +305,7 @@
                     localHideCall = false;
                 }
 
-                // 1. 時間による自動ブラックアウト判定 または 手動消灯
+                // 1. 時間による自動ブラックアウト または 手動消灯の判定
                 const now = new Date();
                 const hours = now.getHours();
                 const minutes = now.getMinutes();
@@ -444,3 +439,4 @@
     </script>
 </body>
 </html>
+
