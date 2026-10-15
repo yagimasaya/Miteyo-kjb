@@ -1,3 +1,6 @@
+「消」ボタンが押されて画面が消灯（ブラックアウト）した際、同じ位置（ヘッダー部分）に「表示する」ボタンが出現し、そのボタンが30%グレー（半透明のグレー）で表示されるように修正したコードです。
+「表示する」ボタンを押すと、消灯状態が解除されて元の画面に戻り、ボタンが再び「消」に切り替わります。
+修正コード (index.html)
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -37,7 +40,7 @@
             box-sizing: border-box;
         }
 
-        /* ヘッダー部分（タイトルと常時表示の消灯ボタンを配置） */
+        /* ヘッダー部分 */
         .header-container {
             display: flex;
             justify-content: space-between;
@@ -56,7 +59,7 @@
             flex-grow: 1;
         }
 
-        /* 常時表示の「消」ボタン（青色・ヘッダー内） */
+        /* 「消」ボタン（青色） */
         #btnHeaderBlackout {
             background-color: #3182ce;
             color: white;
@@ -70,11 +73,33 @@
             -webkit-tap-highlight-color: transparent;
             transition: background-color 0.2s;
             flex-shrink: 0;
-            z-index: 10;
+            z-index: 10000; /* 消灯画面より手前に表示して押せるようにする */
         }
         #btnHeaderBlackout:active {
             transform: scale(0.95);
             background-color: #2b6cb0;
+        }
+
+        /* 「表示する」ボタン（30%グレー） */
+        #btnHeaderRestore {
+            background-color: rgba(128, 128, 128, 0.7); /* 30%の濃さ・不透明度のグレー */
+            color: white;
+            font-size: 1.2rem;
+            font-weight: bold;
+            border: none;
+            border-radius: 12px;
+            padding: 10px 20px;
+            cursor: pointer;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+            -webkit-tap-highlight-color: transparent;
+            transition: background-color 0.2s;
+            flex-shrink: 0;
+            z-index: 10000; /* 消灯画面より手前に配置して押せるようにする */
+            display: none; /* 初期状態では非表示 */
+        }
+        #btnHeaderRestore:active {
+            transform: scale(0.95);
+            background-color: rgba(100, 100, 100, 0.9);
         }
 
         /* 「ビデオ通話して」ボタンのスタイル（赤色） */
@@ -219,13 +244,14 @@
     <div id="blackout-screen"></div>
 
     <div class="card">
-        <!-- ヘッダー（タイトルと常時表示の「消」ボタン） -->
+        <!-- ヘッダー（タイトル、青い「消」ボタン、30%グレーの「表示する」ボタン） -->
         <div class="header-container">
             <h2>父への伝言板</h2>
             <button id="btnHeaderBlackout" onclick="toggleManualBlackout()">消</button>
+            <button id="btnHeaderRestore" onclick="toggleManualBlackout()">表示する</button>
         </div>
 
-        <!-- ★ここに赤色の「ビデオ通話して」ボタンを確実に配置しました -->
+        <!-- 赤色の「ビデオ通話して」ボタン -->
         <button class="call-request-btn" onclick="sendVideoCallRequest(this)">
             <span>📹</span>
             <span>ビデオ通話求む　　政一より</span>
@@ -248,15 +274,17 @@
         let localAckIds = new Set();
         let manualBlackout = false;
 
-        // 手動でAAA消灯を切り替える関数
+        // 手動で消灯 / 表示を切り替える関数
         window.toggleManualBlackout = function() {
             manualBlackout = !manualBlackout;
             updateBlackoutDisplay();
         };
 
-        // 画面の消灯状態を更新する関数
+        // 画面の消灯状態とボタンの切り替えを行う関数
         function updateBlackoutDisplay() {
             const blackoutDiv = document.getElementById('blackout-screen');
+            const btnBlackout = document.getElementById('btnHeaderBlackout');
+            const btnRestore = document.getElementById('btnHeaderRestore');
             
             const now = new Date();
             const hours = now.getHours();
@@ -265,8 +293,12 @@
 
             if (manualBlackout || window.serverIsBlackout || isNightBlackout) {
                 blackoutDiv.style.display = "block";
+                btnBlackout.style.display = "none";    // 「消」ボタンを隠す
+                btnRestore.style.display = "block";    // 「表示する」ボタンを表示する
             } else {
                 blackoutDiv.style.display = "none";
+                btnBlackout.style.display = "block";   // 「消」ボタンを表示する
+                btnRestore.style.display = "none";     // 「表示する」ボタンを隠す
             }
         }
 
@@ -420,3 +452,4 @@
     </script>
 </body>
 </html>
+
