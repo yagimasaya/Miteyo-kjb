@@ -44,7 +44,7 @@
             align-items: center;
             border-bottom: 3px solid #06c755;
             padding-bottom: 10px;
-            margin-bottom: 10px;
+            margin-bottom: 15px;
             flex-shrink: 0;
         }
 
@@ -180,7 +180,7 @@
             transform: scale(0.95);
         }
 
-        /* ★ビデオ通話要求メッセージ専用の赤色強調スタイル */
+        /* ビデオ通話要求メッセージ専用の赤色強調スタイル */
         .message-item.call-request-msg {
             background-color: #fff5f5 !important;
             border-left-color: #e53e3e !important;
@@ -197,7 +197,7 @@
             box-shadow: 0 4px 10px rgba(229, 62, 62, 0.25);
         }
 
-        /* 了解済み（既読）スタイル（赤色メッセージもグレーダウン） */
+        /* 了解済み（既読）スタイル */
         .message-item.acknowledged {
             background: #e2e8f0 !important;
             border-left-color: #cbd5e1 !important;
@@ -225,7 +225,7 @@
             <button id="btnHeaderBlackout" onclick="toggleManualBlackout()">消</button>
         </div>
 
-        <!-- 「ビデオ通話して」ボタン（赤） -->
+        <!-- ★ここに赤色の「ビデオ通話して」ボタンを確実に配置しました -->
         <button class="call-request-btn" onclick="sendVideoCallRequest(this)">
             <span>📹</span>
             <span>ビデオ通話求む　　政一より</span>
@@ -246,7 +246,7 @@
 
         let lastDataString = "";
         let localAckIds = new Set();
-        let manualBlackout = false; // 手動消灯フラグ
+        let manualBlackout = false;
 
         // 手動でAAA消灯を切り替える関数
         window.toggleManualBlackout = function() {
@@ -258,13 +258,11 @@
         function updateBlackoutDisplay() {
             const blackoutDiv = document.getElementById('blackout-screen');
             
-            // 夜間自動消灯の判定（夜0:05 〜 朝5:00）
             const now = new Date();
             const hours = now.getHours();
             const minutes = now.getMinutes();
             const isNightBlackout = (hours === 0 && minutes >= 5) || (hours >= 1 && hours < 5);
 
-            // 手動消灯、またはGAS側もしくは時間による消灯が有効な場合
             if (manualBlackout || window.serverIsBlackout || isNightBlackout) {
                 blackoutDiv.style.display = "block";
             } else {
@@ -277,13 +275,9 @@
                 const response = await fetch(GAS_API_URL);
                 const data = await response.json();
 
-                // サーバー側の消灯フラグを保持
                 window.serverIsBlackout = data.isBlackout || false;
-
-                // 1. 消灯状態の更新（描画処理を止めない安全設計）
                 updateBlackoutDisplay();
 
-                // 2. メッセージ描画
                 const messages = data.messages || [];
                 const ackIdsFromGAS = data.acknowledgedIds || [];
 
@@ -305,13 +299,11 @@
                         const msgId = `${msg.name}_${msg.time}_${msg.text}`;
                         const isAck = localAckIds.has(msgId);
                         
-                        // 「ビデオ通話」が含まれるテキストの場合は赤色用クラスを付与
                         const isCallReq = msg.text && msg.text.includes("ビデオ通話");
 
                         const div = document.createElement('div');
                         div.className = `message-item ${isAck ? 'acknowledged' : ''} ${isCallReq ? 'call-request-msg' : ''}`;
 
-                        // 安全なDOM構築とdatasetを利用したボタン設定
                         const contentDiv = document.createElement('div');
                         contentDiv.className = 'message-content';
 
@@ -422,7 +414,6 @@
             }
         }
 
-        // 初期化時に状態を反映
         updateBlackoutDisplay();
         fetchMessages();
         setInterval(fetchMessages, 10000);
