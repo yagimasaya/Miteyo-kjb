@@ -1,6 +1,3 @@
-普段の掲示板画面（「伝言板」タイトルの右隣など）に、いつでも押せる常時表示の「消」ボタンを配置した最新のコードを作成しました。
-これによって、通話中かどうかに関係なく、いつでも手動で画面を真っ黒（AAA消灯）にできるようになります。
-修正済みの完全版コード (index.html)
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -25,6 +22,7 @@
             background-color: black;
             z-index: 9999;
             display: none;
+            pointer-events: none; /* 消灯中も背後のボタン操作を維持したい場合の対策 */
         }
         .card {
             background: white;
@@ -39,14 +37,13 @@
             box-sizing: border-box;
         }
         
-        /* ヘッダー部分（タイトルと常時表示の消灯ボタンを配置） */
+        /* ヘッダー部分：絶対に潰れない固定レイアウト */
         .header-container {
             display: flex;
             justify-content: space-between;
             align-items: center;
             border-bottom: 2px solid #f0f4f8;
             padding-bottom: 15px;
-            margin-bottom: 0;
             flex-shrink: 0;
         }
         h2 {
@@ -57,7 +54,7 @@
             flex-grow: 1;
         }
         
-        /* 常時表示の「消」ボタン（青色・ヘッダー内） */
+        /* 常時表示の「消」ボタン（確実に表示される独立スタイル） */
         #btnHeaderBlackout {
             background-color: #3182ce;
             color: white;
@@ -71,6 +68,7 @@
             -webkit-tap-highlight-color: transparent;
             transition: background-color 0.2s;
             flex-shrink: 0;
+            z-index: 10;
         }
         #btnHeaderBlackout:active {
             transform: scale(0.95);
@@ -179,7 +177,6 @@
             box-sizing: border-box;
         }
         
-        /* 通話ボタン（緑） */
         #btnAnswer {
             width: 85vw;
             max-width: 500px;
@@ -230,10 +227,11 @@
     </style>
 </head>
 <body>
+    <!-- ブラックアウト用スクリーン -->
     <div id="blackout-screen"></div>
 
     <div class="card">
-        <!-- ヘッダー（タイトルと常時表示の「消」ボタン） -->
+        <!-- ヘッダー：絶対に消えない「消」ボタンを確実に配置 -->
         <div class="header-container">
             <h2>伝言板</h2>
             <button id="btnHeaderBlackout" onclick="toggleManualBlackout()">消</button>
@@ -248,7 +246,7 @@
         </div>
     </div>
 
-    <!-- 電話に出てねオーバーレイ（通話着信時） -->
+    <!-- 電話に出てねオーバーレイ -->
     <div id="call-overlay">
         <a id="btnAnswer" href="#" target="_blank" rel="noopener noreferrer" onclick="handleAnswerClick(event)">
             <span class="phone-icon">📞</span>
@@ -266,23 +264,39 @@
         let localHideCall = false;
         let manualBlackout = false;
 
-        // 手動でAAA消灯を切り替える関数
+        // 手動でAAA消灯を切り替える関数（絶対に処理を止めない独立設計）
         window.toggleManualBlackout = function() {
             manualBlackout = !manualBlackout;
+            updateBlackoutDisplay();
+        };
+
+        // 画面のブラックアウト表示を反映する専用関数
+        function updateBlackoutDisplay(isCalling = false) {
             const blackoutDiv = document.getElementById('blackout-screen');
-            if (manualBlackout) {
+            
+            // 時間判定（0:05 〜 5:00）
+            const now = new Date();
+            const hours = now.getHours();
+            const minutes = now.getMinutes();
+            const isNightBlackout = (hours === 0 && minutes >= 5) || (hours >= 1 && hours < 5);
+
+            // 電話がかかっている最中は、消灯より電話画面を優先する
+            if (manualBlackout || ((isNightBlackout || window.serverIsBlackout) && !isCalling)) {
                 blackoutDiv.style.display = "block";
             } else {
                 blackoutDiv.style.display = "none";
             }
-        };
+        }
 
         async function fetchMessages() {
             try {
                 const response = await fetch(GAS_API_URL);
                 const data = await response.json();
                 
-                // 2. 通話フラグの監視
+                // サーバー側の消灯フラグを保持
+                window.serverIsBlackout = data.isBlackout || false;
+
+                // 1. 通話フラグの監視
                 const callOverlay = document.getElementById('call-overlay');
                 const btnAnswer = document.getElementById('btnAnswer');
 
@@ -305,22 +319,8 @@
                     localHideCall = false;
                 }
 
-                // 1. 時間による自動ブラックアウト または 手動消灯の判定
-                const now = new Date();
-                const hours = now.getHours();
-                const minutes = now.getMinutes();
-
-                const isNightBlackout = (hours === 0 && minutes >= 5) || (hours >= 1 && hours < 5);
-                const blackoutDiv = document.getElementById('blackout-screen');
-
-                if (manualBlackout || ((data.isBlackout || isNightBlackout) && !data.isCalling)) {
-                    blackoutDiv.style.display = "block";
-                    return; 
-                } else {
-                    if (!manualBlackout) {
-                        blackoutDiv.style.display = "none";
-                    }
-                }
+                // 2. ブラックアウト状態の更新（メッセージ描画を途中で止めない安全設計）
+                updateBlackoutDisplay(data.isCalling);
                 
                 // 3. メッセージ描画処理
                 const messages = data.messages || [];
@@ -434,9 +434,11 @@
             }
         };
 
+        // ページ読み込み時に即時ブラックアウト状態をチェック
+        updateBlackoutDisplay();
+        
         fetchMessages();
         setInterval(fetchMessages, 10000);
     </script>
 </body>
 </html>
-
