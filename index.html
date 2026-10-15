@@ -1,6 +1,3 @@
-「消」ボタンが押されて画面が消灯（ブラックアウト）した際、同じ位置（ヘッダー部分）に「表示する」ボタンが出現し、そのボタンが30%グレー（半透明のグレー）で表示されるように修正したコードです。
-「表示する」ボタンを押すと、消灯状態が解除されて元の画面に戻り、ボタンが再び「消」に切り替わります。
-修正コード (index.html)
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -38,6 +35,8 @@
             display: flex;
             flex-direction: column;
             box-sizing: border-box;
+            position: relative;
+            z-index: 1;
         }
 
         /* ヘッダー部分 */
@@ -73,29 +72,30 @@
             -webkit-tap-highlight-color: transparent;
             transition: background-color 0.2s;
             flex-shrink: 0;
-            z-index: 10000; /* 消灯画面より手前に表示して押せるようにする */
         }
         #btnHeaderBlackout:active {
             transform: scale(0.95);
             background-color: #2b6cb0;
         }
 
-        /* 「表示する」ボタン（30%グレー） */
+        /* 「表示する」ボタン（30%グレー・真っ黒画面より手前に強制常駐） */
         #btnHeaderRestore {
-            background-color: rgba(128, 128, 128, 0.7); /* 30%の濃さ・不透明度のグレー */
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background-color: rgba(128, 128, 128, 0.7);
             color: white;
-            font-size: 1.2rem;
+            font-size: 1.5rem;
             font-weight: bold;
-            border: none;
-            border-radius: 12px;
-            padding: 10px 20px;
+            border: 2px solid rgba(255, 255, 255, 0.4);
+            border-radius: 16px;
+            padding: 15px 30px;
             cursor: pointer;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
             -webkit-tap-highlight-color: transparent;
             transition: background-color 0.2s;
-            flex-shrink: 0;
-            z-index: 10000; /* 消灯画面より手前に配置して押せるようにする */
-            display: none; /* 初期状態では非表示 */
+            z-index: 99999;
+            display: none;
         }
         #btnHeaderRestore:active {
             transform: scale(0.95);
@@ -243,12 +243,14 @@
     <!-- 消灯（ブラックアウト）画面 -->
     <div id="blackout-screen"></div>
 
+    <!-- 真っ黒な画面の最上位に絶対配置される「表示する」ボタン -->
+    <button id="btnHeaderRestore" onclick="toggleManualBlackout()">表示する</button>
+
     <div class="card">
-        <!-- ヘッダー（タイトル、青い「消」ボタン、30%グレーの「表示する」ボタン） -->
+        <!-- ヘッダー（タイトルと青い「消」ボタン） -->
         <div class="header-container">
             <h2>父への伝言板</h2>
             <button id="btnHeaderBlackout" onclick="toggleManualBlackout()">消</button>
-            <button id="btnHeaderRestore" onclick="toggleManualBlackout()">表示する</button>
         </div>
 
         <!-- 赤色の「ビデオ通話して」ボタン -->
@@ -293,12 +295,12 @@
 
             if (manualBlackout || window.serverIsBlackout || isNightBlackout) {
                 blackoutDiv.style.display = "block";
-                btnBlackout.style.display = "none";    // 「消」ボタンを隠す
-                btnRestore.style.display = "block";    // 「表示する」ボタンを表示する
+                btnBlackout.style.display = "none";
+                btnRestore.style.display = "block";
             } else {
                 blackoutDiv.style.display = "none";
-                btnBlackout.style.display = "block";   // 「消」ボタンを表示する
-                btnRestore.style.display = "none";     // 「表示する」ボタンを隠す
+                btnBlackout.style.display = "block";
+                btnRestore.style.display = "none";
             }
         }
 
