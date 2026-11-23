@@ -14,18 +14,6 @@
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
         }
 
-        /* 消灯（ブラックアウト）画面 */
-        #blackout-screen {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100dvh;
-            background-color: black;
-            z-index: 9000;
-            display: none;
-        }
-
         /* ボタンを押したときに表示する「ビデオ通話に移動します」画面 */
         #call-transition-screen {
             position: fixed;
@@ -83,26 +71,6 @@
             font-size: 2.0rem;
             text-align: center;
             flex-grow: 1;
-        }
-
-        /* 「消」ボタン（青色） */
-        #btnHeaderBlackout {
-            background-color: #3182ce;
-            color: white;
-            font-size: 1.2rem;
-            font-weight: bold;
-            border: none;
-            border-radius: 12px;
-            padding: 10px 20px;
-            cursor: pointer;
-            box-shadow: 0 2px 6px rgba(49, 130, 206, 0.4);
-            -webkit-tap-highlight-color: transparent;
-            transition: background-color 0.2s;
-            flex-shrink: 0;
-        }
-        #btnHeaderBlackout:active {
-            transform: scale(0.95);
-            background-color: #2b6cb0;
         }
 
         /* 「Meetを開く」ボタン（緑色・全幅） */
@@ -243,9 +211,6 @@
     </style>
 </head>
 <body>
-    <!-- 消灯（ブラックアウト）画面 -->
-    <div id="blackout-screen"></div>
-
     <!-- 「Meetを開く」を押したときに表示する画面 -->
     <div id="call-transition-screen">
         <p id="call-transition-text">ビデオ通話に移動します</p>
@@ -255,7 +220,6 @@
         <!-- ヘッダー -->
         <div class="header-container">
             <h2>父への伝言板</h2>
-            <button id="btnHeaderBlackout" onclick="toggleManualBlackout()">消</button>
         </div>
 
         <!-- Meet起動ボタン -->
@@ -279,51 +243,14 @@
 
         let lastDataString = "";
         let localAckIds = new Set();
-        let manualBlackout = false;
 
         // ボタンを押したら「ビデオ通話に移動します」を表示する関数
         window.openGoogleMeet = function() {
-            manualBlackout = false;
-            window.serverIsBlackout = false;
-            const blackoutDiv = document.getElementById('blackout-screen');
-            if (blackoutDiv) {
-                blackoutDiv.style.display = "none";
-            }
-
             const screen = document.getElementById('call-transition-screen');
             if (screen) {
                 screen.style.display = 'flex';
             }
         };
-
-        // 手動で消灯 / 表示を切り替える関数
-        window.toggleManualBlackout = function() {
-            manualBlackout = !manualBlackout;
-            updateBlackoutDisplay();
-        };
-
-        // 画面の消灯状態を切り替える関数
-        function updateBlackoutDisplay() {
-            const blackoutDiv = document.getElementById('blackout-screen');
-            const transitionDiv = document.getElementById('call-transition-screen');
-            if (!blackoutDiv) return;
-
-            // 「ビデオ通話に移動します」表示中は消灯を重ねない
-            if (transitionDiv && transitionDiv.style.display === 'flex') {
-                blackoutDiv.style.display = "none";
-                return;
-            }
-
-            const now = new Date();
-            const hours = now.getHours();
-            const isNightBlackout = (hours >= 23 || hours < 6);
-
-            if (manualBlackout || window.serverIsBlackout || isNightBlackout) {
-                blackoutDiv.style.display = "block";
-            } else {
-                blackoutDiv.style.display = "none";
-            }
-        }
 
         async function fetchMessages() {
             try {
@@ -331,9 +258,6 @@
                 if (!response.ok) throw new Error("ネットワーク応答エラー");
                 
                 const data = await response.json();
-
-                window.serverIsBlackout = data.isBlackout || false;
-                updateBlackoutDisplay();
 
                 const messages = data.messages || [];
                 const ackIdsFromGAS = data.acknowledgedIds || [];
@@ -441,7 +365,6 @@
             }
         }
 
-        updateBlackoutDisplay();
         fetchMessages();
         setInterval(fetchMessages, 10000);
     </script>
