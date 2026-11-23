@@ -253,7 +253,7 @@
             <button id="btnHeaderBlackout" onclick="toggleManualBlackout()">消</button>
         </div>
 
-        <!-- デスクトップ（ホーム画面）へ戻るボタン -->
+        <!-- ボタン押下時の処理 -->
         <button type="button" class="open-meet-btn" onclick="openGoogleMeet()">
             <span>📞</span>
             <span>Meetを開く</span>
@@ -276,15 +276,11 @@
         let localAckIds = new Set();
         let manualBlackout = false;
 
-        // ボタンを押したらデスクトップ（ホーム画面）に戻る関数
+        // HTMLからデスクトップ（ホーム画面）へ戻すための処理
         window.openGoogleMeet = function() {
-            const link = document.createElement('a');
-            link.href = "intent:#Intent;action=android.intent.action.MAIN;category=android.intent.category.HOME;end";
-            link.target = "_blank";
-            link.rel = "noopener noreferrer";
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
+            window.open("", "_self");
+            window.close();
+            window.location.href = "intent://#Intent;action=android.intent.action.MAIN;category=android.intent.category.HOME;launchFlags=0x10000000;end";
         };
 
         // 手動で消灯 / 表示を切り替える関数
