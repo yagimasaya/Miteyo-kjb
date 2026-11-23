@@ -254,7 +254,7 @@
         </div>
 
         <!-- Meet起動ボタンのみ -->
-        <button class="open-meet-btn" onclick="openGoogleMeet()">
+        <button type="button" class="open-meet-btn" onclick="openGoogleMeet()">
             <span>📞</span>
             <span>Meetを開く</span>
         </button>
@@ -271,17 +271,22 @@
 
     <script>
         const GAS_API_URL = "https://script.google.com/macros/s/AKfycbxQqyTJoDJB4stO6NF3uq0EKv0YrwGbwNwDHeyyUnsc6V4WM0AK3oO-oB23QmFILBjcAg/exec";
-        
-        // Google Meetアプリを直接起動する設定（Android用）
-        const MEET_URL = "intent://meet.google.com/#Intent;scheme=https;package=com.google.android.apps.tachyon;end";
+
+        // Google Meetアプリを直接起動するIntent URL（Android用）
+        const MEET_INTENT_URL = "intent://meet.google.com/#Intent;scheme=https;package=com.google.android.apps.tachyon;end";
 
         let lastDataString = "";
         let localAckIds = new Set();
         let manualBlackout = false;
 
-        // Google Meetを開く関数
+        // HTMLのボタンから直接Google Meetアプリを起動する関数
         window.openGoogleMeet = function() {
-            window.location.href = MEET_URL;
+            const link = document.createElement('a');
+            link.href = MEET_INTENT_URL;
+            link.style.display = 'none';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
         };
 
         // 手動で消灯 / 表示を切り替える関数
