@@ -102,18 +102,19 @@
             background-color: rgba(100, 100, 100, 0.9);
         }
 
-        /* 「ビデオ通話して」ボタンのスタイル（赤色） */
-        .call-request-btn {
-            background-color: #e53e3e;
+        /* 「Meetを開く」ボタン（緑色・全幅） */
+        .open-meet-btn {
+            width: 100%;
+            background-color: #06c755;
             color: white;
             font-size: 1.8rem;
             font-weight: bold;
             border: none;
             border-radius: 16px;
-            padding: 14px 20px;
+            padding: 16px 20px;
             margin-bottom: 15px;
             cursor: pointer;
-            box-shadow: 0 4px 12px rgba(229, 62, 62, 0.35);
+            box-shadow: 0 4px 12px rgba(6, 199, 85, 0.35);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -121,10 +122,9 @@
             flex-shrink: 0;
             -webkit-tap-highlight-color: transparent;
         }
-
-        .call-request-btn:active {
-            transform: scale(0.97);
-            background-color: #c53030;
+        .open-meet-btn:active {
+            transform: scale(0.98);
+            background-color: #05a647;
         }
 
         #message-container {
@@ -205,7 +205,7 @@
             transform: scale(0.95);
         }
 
-        /* ビデオ通話要求メッセージ専用の赤色強調スタイル */
+        /* ビデオ通話要求メッセージ専用の赤色強調スタイル（過去のメッセージ表示用に維持） */
         .message-item.call-request-msg {
             background-color: #fff5f5 !important;
             border-left-color: #e53e3e !important;
@@ -253,10 +253,10 @@
             <button id="btnHeaderBlackout" onclick="toggleManualBlackout()">消</button>
         </div>
 
-        <!-- 赤色の「ビデオ通話して」ボタン -->
-        <button class="call-request-btn" onclick="sendVideoCallRequest(this)">
-            <span>📹</span>
-            <span>ビデオ通話求む　　政一より</span>
+        <!-- Meet起動ボタンのみ -->
+        <button class="open-meet-btn" onclick="openGoogleMeet()">
+            <span>📞</span>
+            <span>Meetを開く</span>
         </button>
 
         <!-- メッセージ一覧 -->
@@ -271,10 +271,18 @@
 
     <script>
         const GAS_API_URL = "https://script.google.com/macros/s/AKfycbxQqyTJoDJB4stO6NF3uq0EKv0YrwGbwNwDHeyyUnsc6V4WM0AK3oO-oB23QmFILBjcAg/exec";
+        
+        // 固定のGoogle Meet会議室URLがある場合はここに入力
+        const MEET_URL = "https://meet.google.com/";
 
         let lastDataString = "";
         let localAckIds = new Set();
         let manualBlackout = false;
+
+        // Google Meetを開く関数
+        window.openGoogleMeet = function() {
+            window.location.href = MEET_URL;
+        };
 
         // 手動で消灯 / 表示を切り替える関数
         window.toggleManualBlackout = function() {
@@ -282,7 +290,7 @@
             updateBlackoutDisplay();
         };
 
-        // 画面の消灯状態とボタンの切り替えを行う関数（PM11:00〜AM6:00自動消灯・堅牢化版）
+        // 画面の消灯状態とボタンの切り替えを行う関数（PM11:00〜AM6:00自動消灯）
         function updateBlackoutDisplay() {
             const blackoutDiv = document.getElementById('blackout-screen');
             const btnBlackout = document.getElementById('btnHeaderBlackout');
@@ -292,8 +300,6 @@
 
             const now = new Date();
             const hours = now.getHours();
-            
-            // PM11:00 (23:00) 〜 翌朝 AM6:00 (6:00未満) の間は自動消灯
             const isNightBlackout = (hours >= 23 || hours < 6);
 
             if (manualBlackout || window.serverIsBlackout || isNightBlackout) {
@@ -339,7 +345,6 @@
                     messages.forEach((msg) => {
                         const msgId = `${msg.name || ''}_${msg.time || ''}_${msg.text || ''}`;
                         const isAck = localAckIds.has(msgId);
-                        
                         const isCallReq = msg.text && msg.text.includes("ビデオ通話");
 
                         const div = document.createElement('div');
@@ -390,37 +395,6 @@
             }
         }
 
-        async function sendVideoCallRequest(btnElement) {
-            btnElement.disabled = true;
-            btnElement.style.opacity = "0.6";
-
-            try {
-                await fetch(GAS_API_URL, {
-                    method: 'POST',
-                    mode: 'no-cors',
-                    headers: {
-                        'Content-Type': 'text/plain'
-                    },
-                    body: JSON.stringify({
-                        action: 'addMessage',
-                        name: '政一',
-                        text: '政一がビデオ通話を求めている'
-                    })
-                });
-
-                setTimeout(() => {
-                    fetchMessages();
-                    btnElement.disabled = false;
-                    btnElement.style.opacity = "1";
-                }, 800);
-
-            } catch (error) {
-                console.error("ビデオ通話要求の送信エラー:", error);
-                btnElement.disabled = false;
-                btnElement.style.opacity = "1";
-            }
-        }
-
         async function toggleAcknowledge(btnElement) {
             const msgId = btnElement.dataset.msgId;
             const itemElement = btnElement.closest('.message-item');
@@ -455,7 +429,6 @@
             }
         }
 
-        // 初期化実行
         updateBlackoutDisplay();
         fetchMessages();
         setInterval(fetchMessages, 10000);
