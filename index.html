@@ -22,11 +22,11 @@
             width: 100vw;
             height: 100dvh;
             background-color: black;
-            z-index: 9999;
+            z-index: 9000;
             display: none;
         }
 
-        /* ビデオ通話移動中オーバーレイ（全画面表示・MacroDroid検知用） */
+        /* ボタンを押したときに表示する「ビデオ通話に移動します」画面 */
         #call-transition-screen {
             position: fixed;
             top: 0;
@@ -34,8 +34,8 @@
             width: 100vw;
             height: 100dvh;
             background-color: #06c755;
-            color: white;
-            z-index: 99990;
+            color: #ffffff;
+            z-index: 99999;
             display: none;
             flex-direction: column;
             align-items: center;
@@ -49,8 +49,8 @@
             font-size: 3.4rem;
             font-weight: bold;
             line-height: 1.4;
+            color: #ffffff;
             margin: 0;
-            text-shadow: 0 3px 10px rgba(0, 0, 0, 0.25);
         }
 
         .card {
@@ -103,30 +103,6 @@
         #btnHeaderBlackout:active {
             transform: scale(0.95);
             background-color: #2b6cb0;
-        }
-
-        /* 「表示する」ボタン（30%グレー・真っ黒画面より手前に強制常駐） */
-        #btnHeaderRestore {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background-color: rgba(128, 128, 128, 0.7);
-            color: white;
-            font-size: 1.5rem;
-            font-weight: bold;
-            border: 2px solid rgba(255, 255, 255, 0.4);
-            border-radius: 16px;
-            padding: 15px 30px;
-            cursor: pointer;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
-            -webkit-tap-highlight-color: transparent;
-            transition: background-color 0.2s;
-            z-index: 99999;
-            display: none;
-        }
-        #btnHeaderRestore:active {
-            transform: scale(0.95);
-            background-color: rgba(100, 100, 100, 0.9);
         }
 
         /* 「Meetを開く」ボタン（緑色・全幅） */
@@ -232,7 +208,7 @@
             transform: scale(0.95);
         }
 
-        /* ビデオ通話要求メッセージ専用の赤色強調スタイル（過去のメッセージ表示用に維持） */
+        /* ビデオ通話要求メッセージ専用の赤色強調スタイル */
         .message-item.call-request-msg {
             background-color: #fff5f5 !important;
             border-left-color: #e53e3e !important;
@@ -270,16 +246,13 @@
     <!-- 消灯（ブラックアウト）画面 -->
     <div id="blackout-screen"></div>
 
-    <!-- 全画面表示：ビデオ通話に移動します -->
+    <!-- 「Meetを開く」を押したときに表示する画面 -->
     <div id="call-transition-screen">
         <p id="call-transition-text">ビデオ通話に移動します</p>
     </div>
 
-    <!-- 真っ黒な画面の最上位に絶対配置される「表示する」ボタン -->
-    <button id="btnHeaderRestore" onclick="toggleManualBlackout()">表示する</button>
-
     <div class="card">
-        <!-- ヘッダー（タイトルと青い「消」ボタン） -->
+        <!-- ヘッダー -->
         <div class="header-container">
             <h2>父への伝言板</h2>
             <button id="btnHeaderBlackout" onclick="toggleManualBlackout()">消</button>
@@ -308,8 +281,15 @@
         let localAckIds = new Set();
         let manualBlackout = false;
 
-        // ボタンを押したら全画面に「ビデオ通話に移動します」を表示する関数
+        // ボタンを押したら「ビデオ通話に移動します」を表示する関数
         window.openGoogleMeet = function() {
+            manualBlackout = false;
+            window.serverIsBlackout = false;
+            const blackoutDiv = document.getElementById('blackout-screen');
+            if (blackoutDiv) {
+                blackoutDiv.style.display = "none";
+            }
+
             const screen = document.getElementById('call-transition-screen');
             if (screen) {
                 screen.style.display = 'flex';
@@ -322,13 +302,17 @@
             updateBlackoutDisplay();
         };
 
-        // 画面の消灯状態とボタンの切り替えを行う関数（PM11:00〜AM6:00自動消灯）
+        // 画面の消灯状態を切り替える関数
         function updateBlackoutDisplay() {
             const blackoutDiv = document.getElementById('blackout-screen');
-            const btnBlackout = document.getElementById('btnHeaderBlackout');
-            const btnRestore = document.getElementById('btnHeaderRestore');
-            
-            if (!blackoutDiv || !btnBlackout || !btnRestore) return;
+            const transitionDiv = document.getElementById('call-transition-screen');
+            if (!blackoutDiv) return;
+
+            // 「ビデオ通話に移動します」表示中は消灯を重ねない
+            if (transitionDiv && transitionDiv.style.display === 'flex') {
+                blackoutDiv.style.display = "none";
+                return;
+            }
 
             const now = new Date();
             const hours = now.getHours();
@@ -336,12 +320,8 @@
 
             if (manualBlackout || window.serverIsBlackout || isNightBlackout) {
                 blackoutDiv.style.display = "block";
-                btnBlackout.style.display = "none";
-                btnRestore.style.display = "block";
             } else {
                 blackoutDiv.style.display = "none";
-                btnBlackout.style.display = "block";
-                btnRestore.style.display = "none";
             }
         }
 
