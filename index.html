@@ -26,6 +26,33 @@
             display: none;
         }
 
+        /* ビデオ通話移動中オーバーレイ（全画面表示・MacroDroid検知用） */
+        #call-transition-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100dvh;
+            background-color: #06c755;
+            color: white;
+            z-index: 99990;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 30px;
+            box-sizing: border-box;
+        }
+
+        #call-transition-text {
+            font-size: 3.4rem;
+            font-weight: bold;
+            line-height: 1.4;
+            margin: 0;
+            text-shadow: 0 3px 10px rgba(0, 0, 0, 0.25);
+        }
+
         .card {
             background: white;
             padding: 20px;
@@ -243,6 +270,11 @@
     <!-- 消灯（ブラックアウト）画面 -->
     <div id="blackout-screen"></div>
 
+    <!-- 全画面表示：ビデオ通話に移動します -->
+    <div id="call-transition-screen">
+        <p id="call-transition-text">ビデオ通話に移動します</p>
+    </div>
+
     <!-- 真っ黒な画面の最上位に絶対配置される「表示する」ボタン -->
     <button id="btnHeaderRestore" onclick="toggleManualBlackout()">表示する</button>
 
@@ -253,7 +285,7 @@
             <button id="btnHeaderBlackout" onclick="toggleManualBlackout()">消</button>
         </div>
 
-        <!-- ボタン押下時の処理 -->
+        <!-- Meet起動ボタン -->
         <button type="button" class="open-meet-btn" onclick="openGoogleMeet()">
             <span>📞</span>
             <span>Meetを開く</span>
@@ -276,11 +308,12 @@
         let localAckIds = new Set();
         let manualBlackout = false;
 
-        // HTMLからデスクトップ（ホーム画面）へ戻すための処理
+        // ボタンを押したら全画面に「ビデオ通話に移動します」を表示する関数
         window.openGoogleMeet = function() {
-            window.open("", "_self");
-            window.close();
-            window.location.href = "intent://#Intent;action=android.intent.action.MAIN;category=android.intent.category.HOME;launchFlags=0x10000000;end";
+            const screen = document.getElementById('call-transition-screen');
+            if (screen) {
+                screen.style.display = 'flex';
+            }
         };
 
         // 手動で消灯 / 表示を切り替える関数
