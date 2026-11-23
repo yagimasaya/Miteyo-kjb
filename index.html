@@ -253,7 +253,7 @@
             <button id="btnHeaderBlackout" onclick="toggleManualBlackout()">消</button>
         </div>
 
-        <!-- Meet起動ボタンのみ -->
+        <!-- デスクトップ（ホーム画面）へ戻るボタン -->
         <button type="button" class="open-meet-btn" onclick="openGoogleMeet()">
             <span>📞</span>
             <span>Meetを開く</span>
@@ -272,17 +272,14 @@
     <script>
         const GAS_API_URL = "https://script.google.com/macros/s/AKfycbxQqyTJoDJB4stO6NF3uq0EKv0YrwGbwNwDHeyyUnsc6V4WM0AK3oO-oB23QmFILBjcAg/exec";
 
-        // Google Meetアプリを直接起動するIntent URL
-        const MEET_INTENT_URL = "intent:#Intent;action=android.intent.action.MAIN;category=android.intent.category.LAUNCHER;package=com.google.android.apps.tachyon;end";
-
         let lastDataString = "";
         let localAckIds = new Set();
         let manualBlackout = false;
 
-        // HTMLのボタンから直接Google Meetアプリを起動する関数
+        // ボタンを押したらデスクトップ（ホーム画面）に戻る関数
         window.openGoogleMeet = function() {
             const link = document.createElement('a');
-            link.href = MEET_INTENT_URL;
+            link.href = "intent:#Intent;action=android.intent.action.MAIN;category=android.intent.category.HOME;end";
             link.target = "_blank";
             link.rel = "noopener noreferrer";
             document.body.appendChild(link);
