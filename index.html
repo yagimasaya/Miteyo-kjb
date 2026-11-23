@@ -272,8 +272,8 @@
     <script>
         const GAS_API_URL = "https://script.google.com/macros/s/AKfycbxQqyTJoDJB4stO6NF3uq0EKv0YrwGbwNwDHeyyUnsc6V4WM0AK3oO-oB23QmFILBjcAg/exec";
         
-        // 固定のGoogle Meet会議室URLがある場合はここに入力
-        const MEET_URL = "https://meet.google.com/";
+        // Google Meetアプリを直接起動する設定（Android用）
+        const MEET_URL = "intent://meet.google.com/#Intent;scheme=https;package=com.google.android.apps.tachyon;end";
 
         let lastDataString = "";
         let localAckIds = new Set();
