@@ -14,7 +14,7 @@
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
         }
 
-        /* 「Meetを開く」を押したときの黒い画面＋白い文字 */
+        /* 「Meetを開く」を押したときの黒い背景＋白い文字 */
         #call-transition-screen {
             position: fixed;
             top: 0;
@@ -211,7 +211,7 @@
     </style>
 </head>
 <body>
-    <!-- 「Meetを開く」を押したときに表示する黒い画面＋白い文字 -->
+    <!-- 「Meetを開く」を押したときに表示する黒い背景＋白い文字 -->
     <div id="call-transition-screen">
         <p id="call-transition-text">ビデオ通話に移動します</p>
     </div>
@@ -244,10 +244,12 @@
         let lastDataString = "";
         let localAckIds = new Set();
 
-        // ボタンを押したら黒い画面に白い文字で「ビデオ通話に移動します」を表示する関数
+        // ボタンを押したら黒い背景に白い文字で「ビデオ通話に移動します」を表示する関数
         window.openGoogleMeet = function() {
             const screen = document.getElementById('call-transition-screen');
             if (screen) {
+                screen.style.backgroundColor = '#000000';
+                screen.style.color = '#ffffff';
                 screen.style.display = 'flex';
             }
         };
