@@ -324,6 +324,7 @@
 
     <script>
         const GAS_API_URL = "https://script.google.com/macros/s/AKfycbxQqyTJoDJB4stO6NF3uq0EKv0YrwGbwNwDHeyyUnsc6V4WM0AK3oO-oB23QmFILBjcAg/exec";
+        const MEET_PACKAGE = "com.google.android.apps.tachyon";
 
         let lastDataString = "";
         let localAckIds = new Set();
@@ -344,7 +345,7 @@
             }
         };
 
-        // 「通話をする」ボタンを押したときの処理
+        // 「通話をする」ボタンを押したときに Google Meet を開く処理
         window.openGoogleMeet = function() {
             const screen = document.getElementById('call-transition-screen');
             const sub = document.getElementById('call-debug-sub');
@@ -355,22 +356,20 @@
             }
 
             try {
-                if (typeof fully === 'undefined') {
-                    if (sub) sub.textContent = "fully: undefined";
-                    return;
+                if (typeof fully !== 'undefined') {
+                    if (typeof fully.exitKiosk === 'function') {
+                        fully.exitKiosk();
+                    }
+                    if (typeof fully.startApplication === 'function') {
+                        if (sub) sub.textContent = "Google Meet を起動中...";
+                        fully.startApplication(MEET_PACKAGE);
+                        return;
+                    }
                 }
-                const hasExit = typeof fully.exitKiosk === 'function';
-                const hasIntent = typeof fully.startIntent === 'function';
-                if (sub) sub.textContent = `fully: OK (exitKiosk=${hasExit}, startIntent=${hasIntent})`;
-
-                if (hasExit) {
-                    fully.exitKiosk();
-                }
-                if (hasIntent) {
-                    fully.startIntent('android.intent.action.MAIN', '', 'android.intent.category.HOME', '', '');
-                }
+                if (sub) sub.textContent = "ブラウザ経由で Google Meet を起動中...";
+                window.location.href = `intent://#Intent;package=${MEET_PACKAGE};end`;
             } catch (e) {
-                if (sub) sub.textContent = "Error: " + (e && e.message ? e.message : String(e));
+                if (sub) sub.textContent = "起動エラー: " + (e && e.message ? e.message : String(e));
             }
         };
 
