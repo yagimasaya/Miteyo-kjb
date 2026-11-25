@@ -134,6 +134,19 @@
             background-color: #05a647;
         }
 
+        #status-banner {
+            display: none;
+            background-color: #fef3c7;
+            color: #92400e;
+            border: 1px solid #f59e0b;
+            border-radius: 10px;
+            padding: 10px 14px;
+            margin-bottom: 12px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            flex-shrink: 0;
+        }
+
         #message-container {
             flex-grow: 1;
             overflow-y: auto;
@@ -270,6 +283,8 @@
             </button>
         </div>
 
+        <div id="status-banner"></div>
+
         <!-- メッセージ一覧 -->
         <div id="message-container">
             <div class="message-item">
@@ -285,6 +300,13 @@
 
         let lastDataString = "";
         let localAckIds = new Set();
+
+        function showStatus(msg) {
+            const banner = document.getElementById('status-banner');
+            if (!banner) return;
+            banner.textContent = msg;
+            banner.style.display = 'block';
+        }
 
         // 「画面を消す」ボタンを押したときの処理
         window.showBlackout = function() {
@@ -302,7 +324,7 @@
             }
         };
 
-        // 「通話する」ボタンを押したときの処理（Fully Kiosk Browser PLUS JS APIでデスクトップへ移動）
+        // 「通話する」ボタンを押したときの処理（デスクトップ／ホーム画面へ移動）
         window.goToDesktop = function() {
             try {
                 if (typeof fully !== 'undefined') {
@@ -310,13 +332,13 @@
                         fully.exitKiosk();
                     }
                     if (typeof fully.startIntent === 'function') {
-                        fully.startIntent('#Intent;action=android.intent.action.MAIN;category=android.intent.category.HOME;end');
+                        fully.startIntent('android.intent.action.MAIN', '', 'android.intent.category.HOME', '', '');
+                        return;
                     }
-                } else {
-                    alert("Fully Kiosk Browser のJavaScriptインターフェースが利用できません。");
                 }
+                showStatus("Fully API が見つからないため移動できませんでした。");
             } catch (e) {
-                console.error("デスクトップ移動エラー:", e);
+                showStatus("移動エラー: " + (e && e.message ? e.message : String(e)));
             }
         };
 
@@ -412,29 +434,3 @@
             } else {
                 itemElement.classList.add('acknowledged');
                 btnElement.classList.add('acknowledged');
-                btnElement.textContent = '済み';
-                localAckIds.add(msgId);
-            }
-
-            try {
-                await fetch(GAS_API_URL, {
-                    method: 'POST',
-                    mode: 'no-cors',
-                    headers: {
-                        'Content-Type': 'text/plain'
-                    },
-                    body: JSON.stringify({
-                        action: 'toggleAcknowledge',
-                        msgId: msgId
-                    })
-                });
-            } catch (error) {
-                console.error("了解トグル送信エラー:", error);
-            }
-        }
-
-        fetchMessages();
-        setInterval(fetchMessages, 10000);
-    </script>
-</body>
-</html>
