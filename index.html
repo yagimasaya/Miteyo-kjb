@@ -112,9 +112,9 @@
             background-color: #1e293b;
         }
 
-        .desktop-btn {
+        .call-desktop-btn {
             flex: 1;
-            background-color: #0284c7;
+            background-color: #06c755;
             color: white;
             font-size: 1.6rem;
             font-weight: bold;
@@ -122,16 +122,16 @@
             border-radius: 16px;
             padding: 16px 14px;
             cursor: pointer;
-            box-shadow: 0 4px 12px rgba(2, 132, 199, 0.3);
+            box-shadow: 0 4px 12px rgba(6, 199, 85, 0.35);
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 10px;
             -webkit-tap-highlight-color: transparent;
         }
-        .desktop-btn:active {
+        .call-desktop-btn:active {
             transform: scale(0.98);
-            background-color: #0369a1;
+            background-color: #05a647;
         }
 
         #message-container {
@@ -264,9 +264,9 @@
                 <span>🌑</span>
                 <span>画面を消す</span>
             </button>
-            <button type="button" class="desktop-btn" onclick="goToDesktop()">
-                <span>🏠</span>
-                <span>デスクトップへ</span>
+            <button type="button" class="call-desktop-btn" onclick="goToDesktop()">
+                <span>📞</span>
+                <span>通話する</span>
             </button>
         </div>
 
@@ -302,7 +302,7 @@
             }
         };
 
-        // 「デスクトップへ」ボタンを押したときの処理（Fully Kiosk Browser PLUS JS API）
+        // 「通話する」ボタンを押したときの処理（Fully Kiosk Browser PLUS JS APIでデスクトップへ移動）
         window.goToDesktop = function() {
             try {
                 if (typeof fully !== 'undefined') {
