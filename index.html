@@ -341,7 +341,8 @@
             }
         }
 
-        // 画面が再表示されたときに遷移画面が残らないようにする
+        // 起動時・復帰時に黒画面を必ず消す
+        resetTransitionScreen();
         document.addEventListener("visibilitychange", function() {
             if (!document.hidden) {
                 resetTransitionScreen();
@@ -349,6 +350,9 @@
             }
         });
         window.addEventListener("pageshow", function() {
+            resetTransitionScreen();
+        });
+        window.addEventListener("focus", function() {
             resetTransitionScreen();
         });
 
