@@ -329,6 +329,29 @@
         let lastDataString = "";
         let localAckIds = new Set();
 
+        // 遷移用オーバーレイを閉じて元の伝言板表示に戻す処理
+        function resetTransitionScreen() {
+            const screen = document.getElementById('call-transition-screen');
+            const sub = document.getElementById('call-debug-sub');
+            if (screen) {
+                screen.style.display = 'none';
+            }
+            if (sub) {
+                sub.textContent = "";
+            }
+        }
+
+        // 画面が再表示されたときに遷移画面が残らないようにする
+        document.addEventListener("visibilitychange", function() {
+            if (!document.hidden) {
+                resetTransitionScreen();
+                fetchMessages();
+            }
+        });
+        window.addEventListener("pageshow", function() {
+            resetTransitionScreen();
+        });
+
         // 「表示を消す」ボタンを押したときの処理
         window.hideScreen = function() {
             const screen = document.getElementById('blackout-screen');
