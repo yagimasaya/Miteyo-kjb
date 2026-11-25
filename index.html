@@ -82,29 +82,56 @@
             flex-grow: 1;
         }
 
-        /* 「画面を消す」ボタン（全幅） */
+        /* 上部操作ボタン群 */
+        .action-row {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 15px;
+            flex-shrink: 0;
+        }
+
         .blackout-btn {
-            width: 100%;
+            flex: 1;
             background-color: #334155;
             color: white;
-            font-size: 1.8rem;
+            font-size: 1.6rem;
             font-weight: bold;
             border: none;
             border-radius: 16px;
-            padding: 16px 20px;
-            margin-bottom: 15px;
+            padding: 16px 14px;
             cursor: pointer;
             box-shadow: 0 4px 12px rgba(15, 23, 42, 0.25);
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 12px;
-            flex-shrink: 0;
+            gap: 10px;
             -webkit-tap-highlight-color: transparent;
         }
         .blackout-btn:active {
             transform: scale(0.98);
             background-color: #1e293b;
+        }
+
+        .desktop-btn {
+            flex: 1;
+            background-color: #0284c7;
+            color: white;
+            font-size: 1.6rem;
+            font-weight: bold;
+            border: none;
+            border-radius: 16px;
+            padding: 16px 14px;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(2, 132, 199, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .desktop-btn:active {
+            transform: scale(0.98);
+            background-color: #0369a1;
         }
 
         #message-container {
@@ -231,11 +258,17 @@
             <h2>父への伝言板</h2>
         </div>
 
-        <!-- 画面を消すボタン -->
-        <button type="button" class="blackout-btn" onclick="showBlackout()">
-            <span>🌑</span>
-            <span>画面を消す</span>
-        </button>
+        <!-- 上部操作ボタン -->
+        <div class="action-row">
+            <button type="button" class="blackout-btn" onclick="showBlackout()">
+                <span>🌑</span>
+                <span>画面を消す</span>
+            </button>
+            <button type="button" class="desktop-btn" onclick="goToDesktop()">
+                <span>🏠</span>
+                <span>デスクトップへ</span>
+            </button>
+        </div>
 
         <!-- メッセージ一覧 -->
         <div id="message-container">
@@ -266,6 +299,24 @@
             const screen = document.getElementById('blackout-screen');
             if (screen) {
                 screen.style.display = 'none';
+            }
+        };
+
+        // 「デスクトップへ」ボタンを押したときの処理（Fully Kiosk Browser PLUS JS API）
+        window.goToDesktop = function() {
+            try {
+                if (typeof fully !== 'undefined') {
+                    if (typeof fully.exitKiosk === 'function') {
+                        fully.exitKiosk();
+                    }
+                    if (typeof fully.startIntent === 'function') {
+                        fully.startIntent('#Intent;action=android.intent.action.MAIN;category=android.intent.category.HOME;end');
+                    }
+                } else {
+                    alert("Fully Kiosk Browser のJavaScriptインターフェースが利用できません。");
+                }
+            } catch (e) {
+                console.error("デスクトップ移動エラー:", e);
             }
         };
 
