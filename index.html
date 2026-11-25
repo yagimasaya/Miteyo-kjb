@@ -14,7 +14,7 @@
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
         }
 
-        /* 「Meetを開く」を押したときの黒い背景＋白い文字 */
+        /* 「通話をする」を押したときの黒い背景＋白い文字 */
         #call-transition-screen {
             position: fixed;
             top: 0;
@@ -31,6 +31,7 @@
             text-align: center;
             padding: 30px;
             box-sizing: border-box;
+            gap: 20px;
         }
 
         #call-transition-text {
@@ -39,6 +40,49 @@
             line-height: 1.4;
             color: #ffffff;
             margin: 0;
+        }
+
+        #call-debug-sub {
+            font-size: 1.4rem;
+            color: #cbd5e1;
+            margin: 0;
+            word-break: break-all;
+        }
+
+        /* 「表示を消す」を押したときの真っ黒画面 */
+        #blackout-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100dvh;
+            background-color: #000000;
+            z-index: 99998;
+            display: none;
+            box-sizing: border-box;
+        }
+
+        /* 真っ黒画面の右上に配置する「表示する」ボタン */
+        #show-screen-btn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background-color: #1e293b;
+            color: #ffffff;
+            border: 2px solid #64748b;
+            border-radius: 14px;
+            padding: 14px 24px;
+            font-size: 1.5rem;
+            font-weight: bold;
+            cursor: pointer;
+            z-index: 100000;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        #show-screen-btn:active {
+            transform: scale(0.96);
+            background-color: #334155;
         }
 
         .card {
@@ -73,24 +117,52 @@
             flex-grow: 1;
         }
 
-        /* 「Meetを開く」ボタン（緑色・全幅） */
-        .open-meet-btn {
-            width: 100%;
-            background-color: #06c755;
+        /* 上部操作ボタン群 */
+        .action-row {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 15px;
+            flex-shrink: 0;
+        }
+
+        .hide-screen-btn {
+            flex: 1;
+            background-color: #334155;
             color: white;
-            font-size: 1.8rem;
+            font-size: 1.6rem;
             font-weight: bold;
             border: none;
             border-radius: 16px;
-            padding: 16px 20px;
-            margin-bottom: 15px;
+            padding: 16px 14px;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.25);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .hide-screen-btn:active {
+            transform: scale(0.98);
+            background-color: #1e293b;
+        }
+
+        /* 「通話をする」ボタン（緑色） */
+        .open-meet-btn {
+            flex: 1;
+            background-color: #06c755;
+            color: white;
+            font-size: 1.6rem;
+            font-weight: bold;
+            border: none;
+            border-radius: 16px;
+            padding: 16px 14px;
             cursor: pointer;
             box-shadow: 0 4px 12px rgba(6, 199, 85, 0.35);
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 12px;
-            flex-shrink: 0;
+            gap: 10px;
             -webkit-tap-highlight-color: transparent;
         }
         .open-meet-btn:active {
@@ -211,9 +283,15 @@
     </style>
 </head>
 <body>
-    <!-- 「Meetを開く」を押したときに表示する黒い背景＋白い文字 -->
+    <!-- 「表示を消す」を押したときに表示する真っ黒画面と右上の「表示する」ボタン -->
+    <div id="blackout-screen">
+        <button type="button" id="show-screen-btn" onclick="showScreen()">表示する</button>
+    </div>
+
+    <!-- 「通話をする」を押したときに表示する黒い背景＋白い文字 -->
     <div id="call-transition-screen">
         <p id="call-transition-text">ビデオ通話に移動します</p>
+        <p id="call-debug-sub"></p>
     </div>
 
     <div class="card">
@@ -222,11 +300,17 @@
             <h2>父への伝言板</h2>
         </div>
 
-        <!-- Meet起動ボタン -->
-        <button type="button" class="open-meet-btn" onclick="openGoogleMeet()">
-            <span>📞</span>
-            <span>Meetを開く</span>
-        </button>
+        <!-- 上部操作ボタン -->
+        <div class="action-row">
+            <button type="button" class="hide-screen-btn" onclick="hideScreen()">
+                <span>🌑</span>
+                <span>表示を消す</span>
+            </button>
+            <button type="button" class="open-meet-btn" onclick="openGoogleMeet()">
+                <span>📞</span>
+                <span>通話をする</span>
+            </button>
+        </div>
 
         <!-- メッセージ一覧 -->
         <div id="message-container">
@@ -244,13 +328,49 @@
         let lastDataString = "";
         let localAckIds = new Set();
 
-        // ボタンを押したら黒い背景に白い文字で「ビデオ通話に移動します」を表示する関数
+        // 「表示を消す」ボタンを押したときの処理
+        window.hideScreen = function() {
+            const screen = document.getElementById('blackout-screen');
+            if (screen) {
+                screen.style.display = 'block';
+            }
+        };
+
+        // 右上の「表示する」ボタンを押したときに元の表示へ戻す処理
+        window.showScreen = function() {
+            const screen = document.getElementById('blackout-screen');
+            if (screen) {
+                screen.style.display = 'none';
+            }
+        };
+
+        // 「通話をする」ボタンを押したときの処理
         window.openGoogleMeet = function() {
             const screen = document.getElementById('call-transition-screen');
+            const sub = document.getElementById('call-debug-sub');
             if (screen) {
                 screen.style.backgroundColor = '#000000';
                 screen.style.color = '#ffffff';
                 screen.style.display = 'flex';
+            }
+
+            try {
+                if (typeof fully === 'undefined') {
+                    if (sub) sub.textContent = "fully: undefined";
+                    return;
+                }
+                const hasExit = typeof fully.exitKiosk === 'function';
+                const hasIntent = typeof fully.startIntent === 'function';
+                if (sub) sub.textContent = `fully: OK (exitKiosk=${hasExit}, startIntent=${hasIntent})`;
+
+                if (hasExit) {
+                    fully.exitKiosk();
+                }
+                if (hasIntent) {
+                    fully.startIntent('android.intent.action.MAIN', '', 'android.intent.category.HOME', '', '');
+                }
+            } catch (e) {
+                if (sub) sub.textContent = "Error: " + (e && e.message ? e.message : String(e));
             }
         };
 
