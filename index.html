@@ -14,40 +14,31 @@
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
         }
 
-        /* 「画面を消す」を押したときの真っ黒画面 */
-        #blackout-screen {
+        /* 「Meetを開く」を押したときの黒い背景＋白い文字 */
+        #call-transition-screen {
             position: fixed;
             top: 0;
             left: 0;
             width: 100vw;
             height: 100dvh;
             background-color: #000000;
+            color: #ffffff;
             z-index: 99999;
             display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 30px;
             box-sizing: border-box;
         }
 
-        /* 右上の「表示する」ボタン */
-        #show-screen-btn {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background-color: #1e293b;
-            color: #ffffff;
-            border: 2px solid #475569;
-            border-radius: 14px;
-            padding: 14px 24px;
-            font-size: 1.5rem;
+        #call-transition-text {
+            font-size: 3.4rem;
             font-weight: bold;
-            cursor: pointer;
-            z-index: 100000;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
-            -webkit-tap-highlight-color: transparent;
-        }
-
-        #show-screen-btn:active {
-            transform: scale(0.96);
-            background-color: #334155;
+            line-height: 1.4;
+            color: #ffffff;
+            margin: 0;
         }
 
         .card {
@@ -82,69 +73,29 @@
             flex-grow: 1;
         }
 
-        /* 上部操作ボタン群 */
-        .action-row {
-            display: flex;
-            gap: 12px;
-            margin-bottom: 15px;
-            flex-shrink: 0;
-        }
-
-        .blackout-btn {
-            flex: 1;
-            background-color: #334155;
-            color: white;
-            font-size: 1.6rem;
-            font-weight: bold;
-            border: none;
-            border-radius: 16px;
-            padding: 16px 14px;
-            cursor: pointer;
-            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.25);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            -webkit-tap-highlight-color: transparent;
-        }
-        .blackout-btn:active {
-            transform: scale(0.98);
-            background-color: #1e293b;
-        }
-
-        .call-desktop-btn {
-            flex: 1;
+        /* 「Meetを開く」ボタン（緑色・全幅） */
+        .open-meet-btn {
+            width: 100%;
             background-color: #06c755;
             color: white;
-            font-size: 1.6rem;
+            font-size: 1.8rem;
             font-weight: bold;
             border: none;
             border-radius: 16px;
-            padding: 16px 14px;
+            padding: 16px 20px;
+            margin-bottom: 15px;
             cursor: pointer;
             box-shadow: 0 4px 12px rgba(6, 199, 85, 0.35);
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 10px;
+            gap: 12px;
+            flex-shrink: 0;
             -webkit-tap-highlight-color: transparent;
         }
-        .call-desktop-btn:active {
+        .open-meet-btn:active {
             transform: scale(0.98);
             background-color: #05a647;
-        }
-
-        #status-banner {
-            display: none;
-            background-color: #fef3c7;
-            color: #92400e;
-            border: 1px solid #f59e0b;
-            border-radius: 10px;
-            padding: 10px 14px;
-            margin-bottom: 12px;
-            font-size: 1.2rem;
-            font-weight: bold;
-            flex-shrink: 0;
         }
 
         #message-container {
@@ -260,9 +211,9 @@
     </style>
 </head>
 <body>
-    <!-- 「画面を消す」を押したときに表示する真っ黒画面と右上の「表示する」ボタン -->
-    <div id="blackout-screen">
-        <button type="button" id="show-screen-btn" onclick="hideBlackout()">表示する</button>
+    <!-- 「Meetを開く」を押したときに表示する黒い背景＋白い文字 -->
+    <div id="call-transition-screen">
+        <p id="call-transition-text">ビデオ通話に移動します</p>
     </div>
 
     <div class="card">
@@ -271,19 +222,11 @@
             <h2>父への伝言板</h2>
         </div>
 
-        <!-- 上部操作ボタン -->
-        <div class="action-row">
-            <button type="button" class="blackout-btn" onclick="showBlackout()">
-                <span>🌑</span>
-                <span>画面を消す</span>
-            </button>
-            <button type="button" class="call-desktop-btn" onclick="goToDesktop()">
-                <span>📞</span>
-                <span>通話する</span>
-            </button>
-        </div>
-
-        <div id="status-banner"></div>
+        <!-- Meet起動ボタン -->
+        <button type="button" class="open-meet-btn" onclick="openGoogleMeet()">
+            <span>📞</span>
+            <span>Meetを開く</span>
+        </button>
 
         <!-- メッセージ一覧 -->
         <div id="message-container">
@@ -301,44 +244,13 @@
         let lastDataString = "";
         let localAckIds = new Set();
 
-        function showStatus(msg) {
-            const banner = document.getElementById('status-banner');
-            if (!banner) return;
-            banner.textContent = msg;
-            banner.style.display = 'block';
-        }
-
-        // 「画面を消す」ボタンを押したときの処理
-        window.showBlackout = function() {
-            const screen = document.getElementById('blackout-screen');
+        // ボタンを押したら黒い背景に白い文字で「ビデオ通話に移動します」を表示する関数
+        window.openGoogleMeet = function() {
+            const screen = document.getElementById('call-transition-screen');
             if (screen) {
-                screen.style.display = 'block';
-            }
-        };
-
-        // 右上の「表示する」ボタンを押したときに元へ戻す処理
-        window.hideBlackout = function() {
-            const screen = document.getElementById('blackout-screen');
-            if (screen) {
-                screen.style.display = 'none';
-            }
-        };
-
-        // 「通話する」ボタンを押したときの処理（デスクトップ／ホーム画面へ移動）
-        window.goToDesktop = function() {
-            try {
-                if (typeof fully !== 'undefined') {
-                    if (typeof fully.exitKiosk === 'function') {
-                        fully.exitKiosk();
-                    }
-                    if (typeof fully.startIntent === 'function') {
-                        fully.startIntent('android.intent.action.MAIN', '', 'android.intent.category.HOME', '', '');
-                        return;
-                    }
-                }
-                showStatus("Fully API が見つからないため移動できませんでした。");
-            } catch (e) {
-                showStatus("移動エラー: " + (e && e.message ? e.message : String(e)));
+                screen.style.backgroundColor = '#000000';
+                screen.style.color = '#ffffff';
+                screen.style.display = 'flex';
             }
         };
 
