@@ -14,41 +14,6 @@
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
         }
 
-        /* 「通話をする」を押したときの黒い背景＋白い文字 */
-        #call-transition-screen {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100dvh;
-            background-color: #000000;
-            color: #ffffff;
-            z-index: 99999;
-            display: none;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-            padding: 30px;
-            box-sizing: border-box;
-            gap: 20px;
-        }
-
-        #call-transition-text {
-            font-size: 3.4rem;
-            font-weight: bold;
-            line-height: 1.4;
-            color: #ffffff;
-            margin: 0;
-        }
-
-        #call-debug-sub {
-            font-size: 1.4rem;
-            color: #cbd5e1;
-            margin: 0;
-            word-break: break-all;
-        }
-
         /* 「表示を消す」を押したときの真っ黒画面 */
         #blackout-screen {
             position: fixed;
@@ -288,12 +253,6 @@
         <button type="button" id="show-screen-btn" onclick="showScreen()">表示する</button>
     </div>
 
-    <!-- 「通話をする」を押したときに表示する黒い背景＋白い文字 -->
-    <div id="call-transition-screen">
-        <p id="call-transition-text">ビデオ通話に移動します</p>
-        <p id="call-debug-sub"></p>
-    </div>
-
     <div class="card">
         <!-- ヘッダー -->
         <div class="header-container">
@@ -329,33 +288,6 @@
         let lastDataString = "";
         let localAckIds = new Set();
 
-        // 遷移用オーバーレイを閉じて元の伝言板表示に戻す処理
-        function resetTransitionScreen() {
-            const screen = document.getElementById('call-transition-screen');
-            const sub = document.getElementById('call-debug-sub');
-            if (screen) {
-                screen.style.display = 'none';
-            }
-            if (sub) {
-                sub.textContent = "";
-            }
-        }
-
-        // 起動時・復帰時に黒画面を必ず消す
-        resetTransitionScreen();
-        document.addEventListener("visibilitychange", function() {
-            if (!document.hidden) {
-                resetTransitionScreen();
-                fetchMessages();
-            }
-        });
-        window.addEventListener("pageshow", function() {
-            resetTransitionScreen();
-        });
-        window.addEventListener("focus", function() {
-            resetTransitionScreen();
-        });
-
         // 「表示を消す」ボタンを押したときの処理
         window.hideScreen = function() {
             const screen = document.getElementById('blackout-screen');
@@ -372,31 +304,21 @@
             }
         };
 
-        // 「通話をする」ボタンを押したときに Google Meet を開く処理
+        // 「通話をする」ボタンを押したときに画面を出さず Google Meet へ遷移する処理
         window.openGoogleMeet = function() {
-            const screen = document.getElementById('call-transition-screen');
-            const sub = document.getElementById('call-debug-sub');
-            if (screen) {
-                screen.style.backgroundColor = '#000000';
-                screen.style.color = '#ffffff';
-                screen.style.display = 'flex';
-            }
-
             try {
                 if (typeof fully !== 'undefined') {
                     if (typeof fully.exitKiosk === 'function') {
                         fully.exitKiosk();
                     }
                     if (typeof fully.startApplication === 'function') {
-                        if (sub) sub.textContent = "Google Meet を起動中...";
                         fully.startApplication(MEET_PACKAGE);
                         return;
                     }
                 }
-                if (sub) sub.textContent = "ブラウザ経由で Google Meet を起動中...";
                 window.location.href = `intent://#Intent;package=${MEET_PACKAGE};end`;
             } catch (e) {
-                if (sub) sub.textContent = "起動エラー: " + (e && e.message ? e.message : String(e));
+                console.error("Google Meet 起動エラー:", e);
             }
         };
 
