@@ -18,4 +18,357 @@
         #call-transition-screen {
             position: fixed;
             top: 0;
-            l</html>
+            left: 0;
+            width: 100vw;
+            height: 100dvh;
+            background-color: #000000;
+            color: #ffffff;
+            z-index: 99999;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 30px;
+            box-sizing: border-box;
+        }
+
+        #call-transition-text {
+            font-size: 3.4rem;
+            font-weight: bold;
+            line-height: 1.4;
+            color: #ffffff;
+            margin: 0;
+        }
+
+        .card {
+            background: white;
+            padding: 20px;
+            border-radius: 0;
+            width: 100vw;
+            height: 100dvh;
+            display: flex;
+            flex-direction: column;
+            box-sizing: border-box;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* ヘッダー部分 */
+        .header-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 3px solid #06c755;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+            flex-shrink: 0;
+        }
+
+        h2 {
+            margin: 0;
+            color: #333;
+            font-size: 2.0rem;
+            text-align: center;
+            flex-grow: 1;
+        }
+
+        /* 「Meetを開く」ボタン（緑色・全幅） */
+        .open-meet-btn {
+            width: 100%;
+            background-color: #06c755;
+            color: white;
+            font-size: 1.8rem;
+            font-weight: bold;
+            border: none;
+            border-radius: 16px;
+            padding: 16px 20px;
+            margin-bottom: 15px;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(6, 199, 85, 0.35);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            flex-shrink: 0;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .open-meet-btn:active {
+            transform: scale(0.98);
+            background-color: #05a647;
+        }
+
+        #message-container {
+            flex-grow: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            padding-right: 10px;
+            padding-bottom: 20px;
+            box-sizing: border-box;
+        }
+
+        .message-item {
+            background: #f7f9fc;
+            padding: 20px 25px;
+            border-radius: 16px;
+            border-left: 8px solid #06c755;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            flex-shrink: 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .message-content {
+            flex-grow: 1;
+            margin-right: 15px;
+        }
+
+        .message-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .sender-name {
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: #06c755;
+        }
+
+        .message-time {
+            font-size: 1.1rem;
+            color: #666;
+        }
+
+        .message-text {
+            font-size: 2.3rem;
+            color: #333;
+            word-break: break-all;
+            line-height: 1.4;
+            margin: 0;
+            font-weight: 500;
+            white-space: pre-wrap;
+        }
+
+        .ack-btn {
+            background-color: #06c755;
+            color: white;
+            border: none;
+            width: 90px;
+            height: 90px;
+            border-radius: 50%;
+            font-size: 1.4rem;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .ack-btn:active {
+            transform: scale(0.95);
+        }
+
+        /* ビデオ通話要求メッセージ専用の赤色強調スタイル */
+        .message-item.call-request-msg {
+            background-color: #fff5f5 !important;
+            border-left-color: #e53e3e !important;
+        }
+        .message-item.call-request-msg .sender-name {
+            color: #e53e3e !important;
+        }
+        .message-item.call-request-msg .message-text {
+            color: #c53030 !important;
+            font-weight: bold;
+        }
+        .message-item.call-request-msg .ack-btn {
+            background-color: #e53e3e !important;
+            box-shadow: 0 4px 10px rgba(229, 62, 62, 0.25);
+        }
+
+        /* 了解済み（既読）スタイル */
+        .message-item.acknowledged {
+            background: #e2e8f0 !important;
+            border-left-color: #cbd5e1 !important;
+            opacity: 0.65;
+        }
+        .message-item.acknowledged .sender-name,
+        .message-item.acknowledged .message-text,
+        .message-item.acknowledged .message-time {
+            color: #64748b !important;
+        }
+        .ack-btn.acknowledged {
+            background-color: #94a3b8 !important;
+            box-shadow: none;
+        }
+    </style>
+</head>
+<body>
+    <!-- 「Meetを開く」を押したときに表示する黒い背景＋白い文字 -->
+    <div id="call-transition-screen">
+        <p id="call-transition-text">ビデオ通話に移動します</p>
+    </div>
+
+    <div class="card">
+        <!-- ヘッダー -->
+        <div class="header-container">
+            <h2>父への伝言板</h2>
+        </div>
+
+        <!-- Meet起動ボタン -->
+        <button type="button" class="open-meet-btn" onclick="openGoogleMeet()">
+            <span>📞</span>
+            <span>Meetを開く</span>
+        </button>
+
+        <!-- メッセージ一覧 -->
+        <div id="message-container">
+            <div class="message-item">
+                <div class="message-content">
+                    <p class="message-text">データを読み込んでいます...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const GAS_API_URL = "https://script.google.com/macros/s/AKfycbxQqyTJoDJB4stO6NF3uq0EKv0YrwGbwNwDHeyyUnsc6V4WM0AK3oO-oB23QmFILBjcAg/exec";
+
+        let lastDataString = "";
+        let localAckIds = new Set();
+
+        // ボタンを押したら黒い背景に白い文字で「ビデオ通話に移動します」を表示する関数
+        window.openGoogleMeet = function() {
+            const screen = document.getElementById('call-transition-screen');
+            if (screen) {
+                screen.style.backgroundColor = '#000000';
+                screen.style.color = '#ffffff';
+                screen.style.display = 'flex';
+            }
+        };
+
+        async function fetchMessages() {
+            try {
+                const response = await fetch(GAS_API_URL);
+                if (!response.ok) throw new Error("ネットワーク応答エラー");
+                
+                const data = await response.json();
+
+                const messages = data.messages || [];
+                const ackIdsFromGAS = data.acknowledgedIds || [];
+
+                ackIdsFromGAS.forEach(id => localAckIds.add(id));
+
+                const checkData = {
+                    messages: messages,
+                    acknowledgedIds: Array.from(localAckIds)
+                };
+                const dataString = JSON.stringify(checkData);
+
+                if (dataString !== lastDataString) {
+                    lastDataString = dataString;
+                    
+                    const container = document.getElementById('message-container');
+                    if (!container) return;
+                    
+                    container.innerHTML = "";
+
+                    messages.forEach((msg) => {
+                        const msgId = `${msg.name || ''}_${msg.time || ''}_${msg.text || ''}`;
+                        const isAck = localAckIds.has(msgId);
+                        const isCallReq = msg.text && msg.text.includes("ビデオ通話");
+
+                        const div = document.createElement('div');
+                        div.className = `message-item ${isAck ? 'acknowledged' : ''} ${isCallReq ? 'call-request-msg' : ''}`;
+
+                        const contentDiv = document.createElement('div');
+                        contentDiv.className = 'message-content';
+
+                        const headerDiv = document.createElement('div');
+                        headerDiv.className = 'message-header';
+
+                        const senderSpan = document.createElement('span');
+                        senderSpan.className = 'sender-name';
+                        senderSpan.textContent = `${msg.name || ''} さん`;
+
+                        const timeSpan = document.createElement('span');
+                        timeSpan.className = 'message-time';
+                        timeSpan.textContent = msg.time || '';
+
+                        headerDiv.appendChild(senderSpan);
+                        headerDiv.appendChild(timeSpan);
+
+                        const textP = document.createElement('p');
+                        textP.className = 'message-text';
+                        textP.textContent = msg.text || '';
+
+                        contentDiv.appendChild(headerDiv);
+                        contentDiv.appendChild(textP);
+
+                        const btn = document.createElement('button');
+                        btn.className = `ack-btn ${isAck ? 'acknowledged' : ''}`;
+                        btn.textContent = isAck ? '済み' : '了解';
+                        btn.dataset.msgId = msgId;
+                        btn.onclick = function() {
+                            toggleAcknowledge(this);
+                        };
+
+                        div.appendChild(contentDiv);
+                        div.appendChild(btn);
+                        container.appendChild(div);
+                    });
+
+                    container.scrollTop = container.scrollHeight;
+                }
+
+            } catch (error) {
+                console.error("データ取得エラー:", error);
+            }
+        }
+
+        async function toggleAcknowledge(btnElement) {
+            const msgId = btnElement.dataset.msgId;
+            const itemElement = btnElement.closest('.message-item');
+            const isCurrentlyAck = itemElement.classList.contains('acknowledged');
+
+            if (isCurrentlyAck) {
+                itemElement.classList.remove('acknowledged');
+                btnElement.classList.remove('acknowledged');
+                btnElement.textContent = '了解';
+                localAckIds.delete(msgId);
+            } else {
+                itemElement.classList.add('acknowledged');
+                btnElement.classList.add('acknowledged');
+                btnElement.textContent = '済み';
+                localAckIds.add(msgId);
+            }
+
+            try {
+                await fetch(GAS_API_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: {
+                        'Content-Type': 'text/plain'
+                    },
+                    body: JSON.stringify({
+                        action: 'toggleAcknowledge',
+                        msgId: msgId
+                    })
+                });
+            } catch (error) {
+                console.error("了解トグル送信エラー:", error);
+            }
+        }
+
+        fetchMessages();
+        setInterval(fetchMessages, 10000);
+    </script>
+</body>
+</html>
